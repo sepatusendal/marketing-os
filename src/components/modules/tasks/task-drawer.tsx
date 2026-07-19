@@ -94,7 +94,7 @@ export function TaskDrawer({
 
   return (
     <Sheet open={open} onOpenChange={onOpenChange}>
-      <SheetContent className="w-full overflow-y-auto sm:max-w-md">
+      <SheetContent className="overflow-y-auto data-[side=right]:w-full sm:data-[side=right]:max-w-md">
         <SheetHeader>
           <SheetTitle>{mode === "create" ? "New Task" : "Edit Task"}</SheetTitle>
         </SheetHeader>

@@ -11,6 +11,8 @@ export type CampaignListFilters = {
   ownerId?: string;
   search?: string;
   cursor?: string;
+  /** PRD §6.2 note: DESIGNER only sees campaigns that have a task assigned to them. */
+  assignedTaskUserId?: string;
 };
 
 export async function listCampaigns(filters: CampaignListFilters = {}) {
@@ -20,6 +22,9 @@ export async function listCampaigns(filters: CampaignListFilters = {}) {
     ...(filters.ownerId ? { ownerId: filters.ownerId } : {}),
     ...(filters.search
       ? { name: { contains: filters.search, mode: "insensitive" } }
+      : {}),
+    ...(filters.assignedTaskUserId
+      ? { tasks: { some: { assigneeId: filters.assignedTaskUserId } } }
       : {}),
   };
 

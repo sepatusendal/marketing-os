@@ -2,7 +2,7 @@ import Link from "next/link";
 import { requireUser } from "@/lib/auth";
 import { authorize } from "@/lib/rbac";
 import type { LeadStatus, LeadSource } from "@prisma/client";
-import { listLeads } from "@/server/lead.service";
+import { listLeads, listLeadsPaginated } from "@/server/lead.service";
 import { listCampaignOptions } from "@/server/campaign.service";
 import { listActiveUsers } from "@/server/user.service";
 import { LeadPipelineBoard } from "@/components/modules/leads/lead-pipeline-board";
@@ -29,17 +29,21 @@ export default async function LeadsPage({
   const canEdit = authorize(user, "lead:crud");
   const view = params.view === "table" ? "table" : "board";
 
-  const [rawLeads, campaignOptions, users] = await Promise.all([
-    listLeads({
-      status: params.status as LeadStatus | undefined,
-      source: params.source as LeadSource | undefined,
-      search: params.search,
-    }),
+  const leadFilters = {
+    status: params.status as LeadStatus | undefined,
+    source: params.source as LeadSource | undefined,
+    search: params.search,
+  };
+
+  const [rawResult, campaignOptions, users] = await Promise.all([
+    view === "table"
+      ? listLeadsPaginated({ ...leadFilters, cursor: params.cursor })
+      : listLeads(leadFilters).then((leads) => ({ leads, nextCursor: null as string | null })),
     listCampaignOptions(),
     listActiveUsers(),
   ]);
 
-  const leads = rawLeads.map((l) => ({
+  const leads = rawResult.leads.map((l) => ({
     ...l,
     potentialRevenue: l.potentialRevenue?.toString() ?? null,
   }));
@@ -66,7 +70,17 @@ export default async function LeadsPage({
           canEdit={canEdit}
         />
       ) : (
-        <LeadTable leads={leads} campaignOptions={campaignOptions} users={users} canEdit={canEdit} />
+        <>
+          <LeadTable leads={leads} campaignOptions={campaignOptions} users={users} canEdit={canEdit} />
+          {rawResult.nextCursor && (
+            <Link
+              href={`/leads?${new URLSearchParams({ ...params, view: "table", cursor: rawResult.nextCursor }).toString()}`}
+              className="text-sm text-muted-foreground hover:underline"
+            >
+              Load more →
+            </Link>
+          )}
+        </>
       )}
     </div>
   );
