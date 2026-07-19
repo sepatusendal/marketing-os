@@ -29,7 +29,7 @@ export function TaskCard({
         e.dataTransfer.setData("text/plain", task.id);
       }}
       onClick={() => onOpen(task)}
-      className="cursor-grab space-y-2 rounded-md border bg-card p-3 text-sm shadow-sm active:cursor-grabbing"
+      className="cursor-grab space-y-2 rounded-md border bg-card p-3 text-sm shadow-sm transition-all hover:-translate-y-0.5 hover:border-primary/30 hover:shadow-md active:cursor-grabbing active:translate-y-0"
     >
       <div className="font-medium">{task.title}</div>
       {showCampaign && task.campaign && (

@@ -24,8 +24,19 @@ import { ExpenseHistoryTable } from "@/components/modules/budget/expense-history
 import { CategoryBreakdown } from "@/components/modules/budget/category-breakdown";
 import { AddExpenseDialog } from "@/components/modules/budget/add-expense-dialog";
 import { Badge } from "@/components/ui/badge";
-import { formatIDR } from "@/lib/format";
+import { Avatar, AvatarFallback } from "@/components/ui/avatar";
+import { formatIDR, formatDate } from "@/lib/format";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { cn } from "@/lib/utils";
+
+function initials(name: string) {
+  return name
+    .split(" ")
+    .map((part) => part[0])
+    .slice(0, 2)
+    .join("")
+    .toUpperCase();
+}
 
 export default async function CampaignDetailPage({
   params,
@@ -67,31 +78,79 @@ export default async function CampaignDetailPage({
   const allowedTransitions = getAllowedTransitions(campaign.status, canUnarchive);
   const isOverAllocated = campaign.budgetUsed > Number(campaign.budgetAllocated);
 
+  const budgetPercent = Number(campaign.budgetAllocated) > 0
+    ? Math.min(100, Math.round((campaign.budgetUsed / Number(campaign.budgetAllocated)) * 100))
+    : 0;
+
   return (
     <div className="space-y-4">
-      <div className="flex items-start justify-between gap-4">
-        <div>
-          <div className="flex items-center gap-2">
-            <h1 className="text-2xl font-semibold">{campaign.name}</h1>
-            <PriorityBadge priority={campaign.priority} />
+      <div className="rounded-xl border bg-card p-5">
+        <div className="flex flex-wrap items-start justify-between gap-4">
+          <div className="min-w-0">
+            <div className="flex flex-wrap items-center gap-2">
+              <h1 className="font-heading text-2xl font-semibold tracking-tight">
+                {campaign.name}
+              </h1>
+              <PriorityBadge priority={campaign.priority} />
+            </div>
+            {campaign.department && (
+              <p className="mt-0.5 text-muted-foreground">{campaign.department}</p>
+            )}
           </div>
-          {campaign.department && (
-            <p className="text-muted-foreground">{campaign.department}</p>
-          )}
+          <StatusControl
+            campaignId={campaign.id}
+            status={campaign.status}
+            allowedTransitions={canEdit ? allowedTransitions : []}
+          />
         </div>
-        <StatusControl
-          campaignId={campaign.id}
-          status={campaign.status}
-          allowedTransitions={canEdit ? allowedTransitions : []}
-        />
-      </div>
 
-      <div className="flex gap-4 text-sm text-muted-foreground">
-        <span>Owner: {campaign.owner.name}</span>
-        <span>
-          Budget: {formatIDR(campaign.budgetUsed)} / {formatIDR(campaign.budgetAllocated.toString())}
-        </span>
-        {isOverAllocated && <Badge variant="destructive">Over budget</Badge>}
+        <div className="mt-5 grid grid-cols-1 gap-4 border-t pt-4 sm:grid-cols-3">
+          <div className="flex items-center gap-2.5">
+            <Avatar className="h-8 w-8">
+              <AvatarFallback className="bg-primary/10 text-xs font-medium text-primary">
+                {initials(campaign.owner.name)}
+              </AvatarFallback>
+            </Avatar>
+            <div className="min-w-0">
+              <p className="text-xs text-muted-foreground">Owner</p>
+              <p className="truncate text-sm font-medium">{campaign.owner.name}</p>
+            </div>
+          </div>
+
+          <div>
+            <p className="text-xs text-muted-foreground">Dates</p>
+            <p className="text-sm font-medium">
+              {formatDate(campaign.startDate)} – {formatDate(campaign.endDate)}
+            </p>
+          </div>
+
+          <div>
+            <div className="flex items-center justify-between">
+              <p className="text-xs text-muted-foreground">Budget</p>
+              {isOverAllocated && (
+                <Badge variant="destructive" className="h-4 px-1.5 text-[10px]">
+                  Over budget
+                </Badge>
+              )}
+            </div>
+            <p className="text-sm font-medium tabular-nums">
+              {formatIDR(campaign.budgetUsed)}
+              <span className="text-muted-foreground">
+                {" "}
+                / {formatIDR(campaign.budgetAllocated.toString())}
+              </span>
+            </p>
+            <div className="mt-1.5 h-1.5 w-full overflow-hidden rounded-full bg-muted">
+              <div
+                className={cn(
+                  "h-full rounded-full transition-all",
+                  isOverAllocated ? "bg-destructive" : "bg-primary",
+                )}
+                style={{ width: `${budgetPercent}%` }}
+              />
+            </div>
+          </div>
+        </div>
       </div>
 
       <Tabs defaultValue="overview">

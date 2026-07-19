@@ -54,7 +54,7 @@ export default async function KnowledgePage({
             <Link
               key={a.id}
               href={`/knowledge/${a.id}`}
-              className="space-y-2 rounded-lg border p-4 hover:bg-muted/40"
+              className="space-y-2 rounded-lg border p-4 transition-all hover:-translate-y-0.5 hover:border-primary/30 hover:shadow-md"
             >
               <div className="flex items-center justify-between">
                 <Badge variant="outline">{a.type.replaceAll("_", " ")}</Badge>

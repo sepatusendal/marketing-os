@@ -26,7 +26,7 @@ export function LeadCard({
         e.dataTransfer.setData("text/plain", lead.id);
       }}
       onClick={() => onOpen(lead)}
-      className="cursor-grab space-y-1 rounded-md border bg-card p-3 text-sm shadow-sm active:cursor-grabbing"
+      className="cursor-grab space-y-1 rounded-md border bg-card p-3 text-sm shadow-sm transition-all hover:-translate-y-0.5 hover:border-primary/30 hover:shadow-md active:cursor-grabbing active:translate-y-0"
     >
       <div className="font-medium">{lead.name}</div>
       {lead.company && <div className="text-xs text-muted-foreground">{lead.company}</div>}

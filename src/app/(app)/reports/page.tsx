@@ -6,6 +6,7 @@ import {
   getBudgetByCategoryReport,
 } from "@/server/report.service";
 import { ReportDateFilter } from "@/components/modules/reports/report-date-filter";
+import { FunnelChart } from "@/components/modules/reports/funnel-chart";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import {
   Table,
@@ -124,6 +125,7 @@ export default async function ReportsPage({
           </div>
         </CardHeader>
         <CardContent>
+          <FunnelChart rows={leadFunnel} />
           <Table>
             <TableHeader>
               <TableRow>
