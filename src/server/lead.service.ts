@@ -14,20 +14,41 @@ export type LeadListFilters = {
   search?: string;
 };
 
-export async function listLeads(filters: LeadListFilters = {}) {
-  const where: Prisma.LeadWhereInput = {
+function leadWhere(filters: LeadListFilters): Prisma.LeadWhereInput {
+  return {
     ...(filters.status ? { status: filters.status } : {}),
     ...(filters.source ? { source: filters.source } : {}),
     ...(filters.search
       ? { name: { contains: filters.search, mode: "insensitive" } }
       : {}),
   };
+}
 
+/** Unbounded — used by the pipeline board, which needs every lead in every column. */
+export async function listLeads(filters: LeadListFilters = {}) {
   return prisma.lead.findMany({
-    where,
+    where: leadWhere(filters),
     include: LEAD_INCLUDE,
     orderBy: { createdAt: "desc" },
   });
+}
+
+const LEAD_PAGE_SIZE = 25;
+
+/** Cursor-paginated — used by the table view. */
+export async function listLeadsPaginated(filters: LeadListFilters & { cursor?: string } = {}) {
+  const rows = await prisma.lead.findMany({
+    where: leadWhere(filters),
+    include: LEAD_INCLUDE,
+    orderBy: { createdAt: "desc" },
+    take: LEAD_PAGE_SIZE + 1,
+    ...(filters.cursor ? { cursor: { id: filters.cursor }, skip: 1 } : {}),
+  });
+
+  const hasMore = rows.length > LEAD_PAGE_SIZE;
+  const leads = hasMore ? rows.slice(0, LEAD_PAGE_SIZE) : rows;
+
+  return { leads, nextCursor: hasMore ? leads[leads.length - 1].id : null };
 }
 
 export async function getLead(id: string) {

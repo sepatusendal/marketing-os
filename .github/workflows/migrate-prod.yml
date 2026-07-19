@@ -1,0 +1,24 @@
+name: migrate-prod
+
+# PRD §12.5. Runs prisma migrate deploy against production on every merge to
+# main that touches prisma/migrations/**. Requires the PROD_DIRECT_URL
+# secret to be set in this repo's GitHub Actions secrets before it can run
+# successfully — until then this workflow will fail at the migrate step,
+# which is the safe default (no accidental prod writes with an unset URL).
+on:
+  push:
+    branches: [main]
+    paths: ["prisma/migrations/**"]
+
+jobs:
+  migrate:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+      - run: npm ci
+      - run: npx prisma migrate deploy
+        env:
+          DATABASE_URL: ${{ secrets.PROD_DIRECT_URL }}

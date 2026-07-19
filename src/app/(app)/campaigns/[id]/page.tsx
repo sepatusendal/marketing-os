@@ -51,6 +51,12 @@ export default async function CampaignDetailPage({
       listKnowledgeForCampaign(id),
     ]);
 
+  // PRD §6.2 note: DESIGNER only sees campaigns that have a task assigned to
+  // them — block direct-URL access to campaigns outside that scope.
+  if (user.role === Role.DESIGNER && !tasks.some((t) => t.assigneeId === user.id)) {
+    notFound();
+  }
+
   const assetsWithUrls = await Promise.all(
     assets.map(async (a) => ({ ...a, url: await getSignedDownloadUrl(a.storagePath) })),
   );
@@ -146,7 +152,7 @@ export default async function CampaignDetailPage({
         </TabsContent>
 
         <TabsContent value="budget" className="space-y-6 pt-4">
-          <div className="flex items-center justify-between">
+          <div className="flex flex-wrap items-center justify-between gap-2">
             <div className="text-sm text-muted-foreground">
               {formatIDR(campaign.budgetUsed)} used of{" "}
               {formatIDR(campaign.budgetAllocated.toString())} allocated

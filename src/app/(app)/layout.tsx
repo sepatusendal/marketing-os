@@ -3,6 +3,7 @@ import { getCurrentUser } from "@/lib/auth";
 import { listNotifications, countUnreadNotifications } from "@/server/notification.service";
 import { SidebarNav } from "@/components/app-shell/sidebar-nav";
 import { Topbar } from "@/components/app-shell/topbar";
+import { CommandPalette } from "@/components/app-shell/command-palette";
 
 export default async function AppLayout({
   children,
@@ -22,6 +23,7 @@ export default async function AppLayout({
 
   return (
     <div className="flex min-h-screen">
+      <CommandPalette />
       <aside className="hidden w-64 flex-col border-r md:flex">
         <div className="flex h-14 items-center border-b px-4 font-semibold">
           MarketingOS
@@ -29,7 +31,7 @@ export default async function AppLayout({
         <SidebarNav />
       </aside>
 
-      <div className="flex flex-1 flex-col">
+      <div className="flex min-w-0 flex-1 flex-col">
         <Topbar
           name={user.name}
           email={user.email}
@@ -37,7 +39,7 @@ export default async function AppLayout({
           notifications={notifications}
           unreadCount={unreadCount}
         />
-        <main className="flex-1 p-4 md:p-6">{children}</main>
+        <main className="min-w-0 flex-1 overflow-x-hidden p-4 md:p-6">{children}</main>
       </div>
     </div>
   );

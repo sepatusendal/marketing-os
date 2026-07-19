@@ -16,7 +16,7 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
-import type { CampaignStatus } from "@prisma/client";
+import { Role, type CampaignStatus } from "@prisma/client";
 
 export default async function CampaignsPage({
   searchParams,
@@ -34,6 +34,7 @@ export default async function CampaignsPage({
       ownerId: params.ownerId,
       search: params.search,
       cursor: params.cursor,
+      assignedTaskUserId: user.role === Role.DESIGNER ? user.id : undefined,
     }),
     listDepartments(),
     listActiveUsers(),
@@ -41,7 +42,7 @@ export default async function CampaignsPage({
 
   return (
     <div className="space-y-4">
-      <div className="flex items-center justify-between">
+      <div className="flex flex-wrap items-center justify-between gap-2">
         <div>
           <h1 className="text-2xl font-semibold">Campaigns</h1>
           <p className="text-muted-foreground">All marketing campaigns in one place.</p>

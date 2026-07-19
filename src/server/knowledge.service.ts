@@ -16,7 +16,9 @@ export type KnowledgeListFilters = {
   search?: string;
 };
 
-export async function listKnowledge(filters: KnowledgeListFilters = {}) {
+const KNOWLEDGE_PAGE_SIZE = 25;
+
+export async function listKnowledge(filters: KnowledgeListFilters & { cursor?: string } = {}) {
   const where: Prisma.KnowledgeArticleWhereInput = {
     ...(filters.type ? { type: filters.type } : {}),
     ...(filters.tag ? { tags: { has: filters.tag } } : {}),
@@ -31,11 +33,18 @@ export async function listKnowledge(filters: KnowledgeListFilters = {}) {
       : {}),
   };
 
-  return prisma.knowledgeArticle.findMany({
+  const rows = await prisma.knowledgeArticle.findMany({
     where,
     include: { author: true, campaign: { select: { id: true, name: true } } },
     orderBy: { updatedAt: "desc" },
+    take: KNOWLEDGE_PAGE_SIZE + 1,
+    ...(filters.cursor ? { cursor: { id: filters.cursor }, skip: 1 } : {}),
   });
+
+  const hasMore = rows.length > KNOWLEDGE_PAGE_SIZE;
+  const articles = hasMore ? rows.slice(0, KNOWLEDGE_PAGE_SIZE) : rows;
+
+  return { articles, nextCursor: hasMore ? articles[articles.length - 1].id : null };
 }
 
 export async function getKnowledgeArticle(id: string) {

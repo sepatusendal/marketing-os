@@ -19,18 +19,19 @@ export default async function KnowledgePage({
   const user = await requireUser();
   const canCreate = authorize(user, "knowledge:edit");
 
-  const [articles, tags] = await Promise.all([
+  const [{ articles, nextCursor }, tags] = await Promise.all([
     listKnowledge({
       type: params.type as KnowledgeType | undefined,
       tag: params.tag,
       search: params.search,
+      cursor: params.cursor,
     }),
     listAllTags(),
   ]);
 
   return (
     <div className="space-y-4">
-      <div className="flex items-center justify-between">
+      <div className="flex flex-wrap items-center justify-between gap-2">
         <div>
           <h1 className="text-2xl font-semibold">Knowledge</h1>
           <p className="text-muted-foreground">SOPs, experiments, and campaign learnings.</p>
@@ -76,6 +77,15 @@ export default async function KnowledgePage({
             </Link>
           ))}
         </div>
+      )}
+
+      {nextCursor && (
+        <Link
+          href={`/knowledge?${new URLSearchParams({ ...params, cursor: nextCursor }).toString()}`}
+          className="text-sm text-muted-foreground hover:underline"
+        >
+          Load more →
+        </Link>
       )}
     </div>
   );
