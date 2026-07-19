@@ -27,7 +27,7 @@ export function Topbar({
   const [open, setOpen] = useState(false);
 
   return (
-    <header className="sticky top-0 z-40 flex h-14 items-center gap-3 border-b bg-background px-4">
+    <header className="sticky top-0 z-40 flex h-14 items-center gap-3 border-b bg-background/80 px-4 backdrop-blur-sm supports-backdrop-filter:bg-background/60">
       <Sheet open={open} onOpenChange={setOpen}>
         <SheetTrigger
           render={
@@ -41,8 +41,11 @@ export function Topbar({
             </Button>
           }
         />
-        <SheetContent side="left" className="p-0 data-[side=left]:w-64">
-          <div className="flex h-14 items-center border-b px-4 font-semibold">
+        <SheetContent
+          side="left"
+          className="border-sidebar-border bg-sidebar text-sidebar-foreground p-0 data-[side=left]:w-64"
+        >
+          <div className="flex h-14 items-center border-b border-sidebar-border px-4 font-heading text-[15px] font-semibold tracking-tight">
             MarketingOS
           </div>
           <SidebarNav />
@@ -52,23 +55,26 @@ export function Topbar({
       <button
         type="button"
         onClick={() => window.dispatchEvent(new Event("toggle-command-palette"))}
-        className="flex h-8 flex-1 max-w-64 items-center gap-2 rounded-md border bg-muted/40 px-3 text-sm text-muted-foreground hover:bg-muted"
+        className="flex h-9 flex-1 max-w-64 items-center gap-2 rounded-lg border bg-muted/40 px-3 text-sm text-muted-foreground transition-colors hover:border-border hover:bg-muted"
       >
         <Search className="h-3.5 w-3.5" />
         <span className="flex-1 text-left">Search...</span>
-        <kbd className="hidden rounded border bg-background px-1.5 py-0.5 text-[10px] sm:inline">
+        <kbd className="hidden rounded-sm border bg-background px-1.5 py-0.5 font-mono text-[10px] text-muted-foreground sm:inline">
           ⌘K
         </kbd>
       </button>
 
       <div className="flex-1" />
 
-      <NotificationBell
-        notifications={notifications}
-        unreadCount={unreadCount}
-        hrefFor={(n) => notificationHref(n.entityType, n.entityId)}
-      />
-      <ThemeToggle />
+      <div className="flex items-center gap-1">
+        <NotificationBell
+          notifications={notifications}
+          unreadCount={unreadCount}
+          hrefFor={(n) => notificationHref(n.entityType, n.entityId)}
+        />
+        <ThemeToggle />
+      </div>
+      <div className="mx-1 h-6 w-px bg-border" />
       <UserMenu name={name} email={email} avatarUrl={avatarUrl} />
     </header>
   );
