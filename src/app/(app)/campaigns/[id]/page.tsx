@@ -2,14 +2,16 @@ import { notFound } from "next/navigation";
 import { requireUser } from "@/lib/auth";
 import { authorize } from "@/lib/rbac";
 import { Role } from "@prisma/client";
-import { getCampaign } from "@/server/campaign.service";
+import { getCampaign, listCampaignOptions } from "@/server/campaign.service";
 import { listActiveUsers } from "@/server/user.service";
 import { listActivityForEntity } from "@/server/activity.service";
+import { listTasksForCampaign } from "@/server/task.service";
 import { getAllowedTransitions } from "@/lib/campaign-status";
 import { CampaignForm } from "@/components/modules/campaigns/campaign-form";
 import { StatusControl } from "@/components/modules/campaigns/status-control";
 import { CampaignTimeline } from "@/components/modules/campaigns/campaign-timeline";
 import { PriorityBadge } from "@/components/modules/campaigns/status-badge";
+import { KanbanBoard } from "@/components/modules/tasks/kanban-board";
 import { formatIDR } from "@/lib/format";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 
@@ -24,9 +26,11 @@ export default async function CampaignDetailPage({
   const campaign = await getCampaign(id);
   if (!campaign) notFound();
 
-  const [users, activity] = await Promise.all([
+  const [users, activity, tasks, campaignOptions] = await Promise.all([
     listActiveUsers(),
     listActivityForEntity("CAMPAIGN", id),
+    listTasksForCampaign(id),
+    listCampaignOptions(),
   ]);
 
   const canEdit = authorize(user, "campaign:edit_own", { ownerId: campaign.ownerId });
@@ -89,9 +93,13 @@ export default async function CampaignDetailPage({
         </TabsContent>
 
         <TabsContent value="tasks" className="pt-4">
-          <p className="text-sm text-muted-foreground">
-            Campaign-scoped task kanban lands in Phase 2.
-          </p>
+          <KanbanBoard
+            tasks={tasks}
+            showCampaign={false}
+            campaignOptions={campaignOptions}
+            users={users}
+            defaultCampaignId={campaign.id}
+          />
         </TabsContent>
 
         <TabsContent value="budget" className="pt-4">

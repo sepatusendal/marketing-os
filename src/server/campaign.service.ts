@@ -77,6 +77,13 @@ export async function getCampaign(id: string) {
   };
 }
 
+export async function listCampaignOptions() {
+  return prisma.campaign.findMany({
+    select: { id: true, name: true },
+    orderBy: { name: "asc" },
+  });
+}
+
 export async function listDepartments() {
   const rows = await prisma.campaign.findMany({
     where: { department: { not: null } },
