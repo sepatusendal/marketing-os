@@ -15,3 +15,11 @@ export async function logActivity(params: {
 }) {
   return prisma.activityLog.create({ data: params });
 }
+
+export async function listActivityForEntity(entityType: EntityType, entityId: string) {
+  return prisma.activityLog.findMany({
+    where: { entityType, entityId },
+    include: { actor: true },
+    orderBy: { createdAt: "desc" },
+  });
+}

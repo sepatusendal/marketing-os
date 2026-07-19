@@ -20,3 +20,10 @@ export async function upsertUserFromAuth(authUser: SupabaseAuthUser) {
     },
   });
 }
+
+export async function listActiveUsers() {
+  return prisma.user.findMany({
+    where: { isActive: true },
+    orderBy: { name: "asc" },
+  });
+}
