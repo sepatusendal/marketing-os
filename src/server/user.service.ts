@@ -1,4 +1,5 @@
 import { prisma } from "@/lib/prisma";
+import type { Role } from "@prisma/client";
 import type { User as SupabaseAuthUser } from "@supabase/supabase-js";
 
 /**
@@ -26,4 +27,30 @@ export async function listActiveUsers() {
     where: { isActive: true },
     orderBy: { name: "asc" },
   });
+}
+
+export async function listAllUsers() {
+  return prisma.user.findMany({ orderBy: { name: "asc" } });
+}
+
+export async function updateUserRole(id: string, role: Role) {
+  return prisma.user.update({ where: { id }, data: { role } });
+}
+
+export async function setUserActive(id: string, isActive: boolean) {
+  return prisma.user.update({ where: { id }, data: { isActive } });
+}
+
+export async function listDepartments() {
+  const [users, campaigns] = await Promise.all([
+    prisma.user.findMany({ where: { department: { not: null } }, select: { department: true } }),
+    prisma.campaign.findMany({
+      where: { department: { not: null } },
+      select: { department: true },
+    }),
+  ]);
+  const set = new Set<string>();
+  for (const u of users) if (u.department) set.add(u.department);
+  for (const c of campaigns) if (c.department) set.add(c.department);
+  return [...set].sort();
 }

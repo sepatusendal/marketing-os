@@ -60,7 +60,13 @@ export function StatusControl({
       {showReviewPrompt && (
         <div className="flex items-center gap-3 rounded-md border bg-muted/40 p-3 text-sm">
           <span>Write a Campaign Review in Knowledge?</span>
-          <Button size="sm" variant="secondary" onClick={() => router.push("/knowledge")}>
+          <Button
+            size="sm"
+            variant="secondary"
+            onClick={() =>
+              router.push(`/knowledge/new?campaignId=${campaignId}&type=CAMPAIGN_REVIEW`)
+            }
+          >
             Write review
           </Button>
           <Button size="sm" variant="ghost" onClick={() => setShowReviewPrompt(false)}>
