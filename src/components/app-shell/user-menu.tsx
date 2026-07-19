@@ -42,10 +42,12 @@ export function UserMenu({
 
   return (
     <DropdownMenu>
-      <DropdownMenuTrigger className="flex items-center gap-2 rounded-md p-1 outline-none hover:bg-muted">
+      <DropdownMenuTrigger className="flex items-center gap-2 rounded-full p-0.5 outline-none ring-offset-2 ring-offset-background transition-shadow hover:ring-2 hover:ring-border focus-visible:ring-2 focus-visible:ring-ring">
         <Avatar className="h-8 w-8">
           {avatarUrl && <AvatarImage src={avatarUrl} alt={name} />}
-          <AvatarFallback>{initials(name)}</AvatarFallback>
+          <AvatarFallback className="bg-primary/10 font-medium text-primary">
+            {initials(name)}
+          </AvatarFallback>
         </Avatar>
       </DropdownMenuTrigger>
       <DropdownMenuContent align="end" className="w-56">

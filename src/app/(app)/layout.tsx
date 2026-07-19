@@ -1,7 +1,7 @@
 import { redirect } from "next/navigation";
 import { getCurrentUser } from "@/lib/auth";
 import { listNotifications, countUnreadNotifications } from "@/server/notification.service";
-import { SidebarNav } from "@/components/app-shell/sidebar-nav";
+import { AppSidebar } from "@/components/app-shell/app-sidebar";
 import { Topbar } from "@/components/app-shell/topbar";
 import { CommandPalette } from "@/components/app-shell/command-palette";
 
@@ -24,12 +24,7 @@ export default async function AppLayout({
   return (
     <div className="flex min-h-screen">
       <CommandPalette />
-      <aside className="hidden w-64 flex-col border-r md:flex">
-        <div className="flex h-14 items-center border-b px-4 font-semibold">
-          MarketingOS
-        </div>
-        <SidebarNav />
-      </aside>
+      <AppSidebar />
 
       <div className="flex min-w-0 flex-1 flex-col">
         <Topbar
