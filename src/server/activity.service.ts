@@ -23,3 +23,27 @@ export async function listActivityForEntity(entityType: EntityType, entityId: st
     orderBy: { createdAt: "desc" },
   });
 }
+
+/**
+ * Campaign Timeline (PRD §9.2) includes the campaign's own activity plus
+ * its children (tasks, expenses) — ActivityLog has no campaignId column,
+ * so child entries are pulled by first collecting task/expense ids.
+ */
+export async function listCampaignTimeline(campaignId: string) {
+  const [tasks, expenses] = await Promise.all([
+    prisma.task.findMany({ where: { campaignId }, select: { id: true } }),
+    prisma.expense.findMany({ where: { campaignId }, select: { id: true } }),
+  ]);
+
+  return prisma.activityLog.findMany({
+    where: {
+      OR: [
+        { entityType: "CAMPAIGN", entityId: campaignId },
+        { entityType: "TASK", entityId: { in: tasks.map((t) => t.id) } },
+        { entityType: "EXPENSE", entityId: { in: expenses.map((e) => e.id) } },
+      ],
+    },
+    include: { actor: true },
+    orderBy: { createdAt: "desc" },
+  });
+}

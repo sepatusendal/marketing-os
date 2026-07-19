@@ -1,6 +1,7 @@
 import { prisma } from "@/lib/prisma";
 import type { CampaignStatus, Prisma } from "@prisma/client";
 import type { CreateCampaignInput, UpdateCampaignInput } from "@/lib/schemas/campaign";
+import { getBudgetUsedMap, getCampaignBudgetUsed } from "@/server/expense.service";
 
 const PAGE_SIZE = 25;
 
@@ -11,20 +12,6 @@ export type CampaignListFilters = {
   search?: string;
   cursor?: string;
 };
-
-async function getBudgetUsedMap(campaignIds: string[]) {
-  if (campaignIds.length === 0) return {} as Record<string, number>;
-
-  const sums = await prisma.expense.groupBy({
-    by: ["campaignId"],
-    where: { campaignId: { in: campaignIds } },
-    _sum: { amount: true },
-  });
-
-  return Object.fromEntries(
-    sums.map((s) => [s.campaignId, Number(s._sum.amount ?? 0)]),
-  ) as Record<string, number>;
-}
 
 export async function listCampaigns(filters: CampaignListFilters = {}) {
   const where: Prisma.CampaignWhereInput = {
@@ -64,11 +51,7 @@ export async function getCampaign(id: string) {
   });
   if (!campaign) return null;
 
-  const usedResult = await prisma.expense.aggregate({
-    where: { campaignId: id },
-    _sum: { amount: true },
-  });
-  const budgetUsed = Number(usedResult._sum.amount ?? 0);
+  const budgetUsed = await getCampaignBudgetUsed(id);
 
   return {
     ...campaign,
