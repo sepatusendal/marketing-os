@@ -7,15 +7,22 @@ import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
 import { SidebarNav } from "./sidebar-nav";
 import { ThemeToggle } from "./theme-toggle";
 import { UserMenu } from "./user-menu";
+import { NotificationBell } from "./notification-bell";
+import { notificationHref } from "@/lib/notification-href";
+import type { Notification } from "@prisma/client";
 
 export function Topbar({
   name,
   email,
   avatarUrl,
+  notifications,
+  unreadCount,
 }: {
   name: string;
   email: string;
   avatarUrl?: string | null;
+  notifications: Notification[];
+  unreadCount: number;
 }) {
   const [open, setOpen] = useState(false);
 
@@ -44,6 +51,11 @@ export function Topbar({
 
       <div className="flex-1" />
 
+      <NotificationBell
+        notifications={notifications}
+        unreadCount={unreadCount}
+        hrefFor={(n) => notificationHref(n.entityType, n.entityId)}
+      />
       <ThemeToggle />
       <UserMenu name={name} email={email} avatarUrl={avatarUrl} />
     </header>

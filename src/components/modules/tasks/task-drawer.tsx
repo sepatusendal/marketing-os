@@ -1,8 +1,14 @@
 "use client";
 
-import { useActionState, useEffect } from "react";
+import { useActionState, useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
+import { listTaskAssetsAction } from "@/lib/actions/asset";
+import { listCommentsAction } from "@/lib/actions/comment";
+import { AssetUploader } from "@/components/modules/assets/asset-uploader";
+import { AssetGrid } from "@/components/modules/assets/asset-grid";
+import { CommentThread } from "@/components/modules/comments/comment-thread";
+import type { Asset, Comment, User as PrismaUser } from "@prisma/client";
 import {
   Sheet,
   SheetContent,
@@ -55,6 +61,8 @@ export function TaskDrawer({
   const mode = task ? "edit" : "create";
   const action = mode === "create" ? createTaskAction : updateTaskAction;
   const [state, formAction, pending] = useActionState<ActionState, FormData>(action, {});
+  const [assets, setAssets] = useState<(Asset & { uploader: PrismaUser; url: string })[]>([]);
+  const [comments, setComments] = useState<(Comment & { author: PrismaUser })[]>([]);
 
   useEffect(() => {
     if (state.success) {
@@ -65,6 +73,12 @@ export function TaskDrawer({
     if (state.error) toast.error(state.error);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [state]);
+
+  useEffect(() => {
+    if (!task || !open) return;
+    listTaskAssetsAction(task.id).then(setAssets);
+    listCommentsAction("TASK", task.id).then(setComments);
+  }, [task, open]);
 
   const fieldError = (field: string) => state.fieldErrors?.[field]?.[0];
 
@@ -203,6 +217,27 @@ export function TaskDrawer({
             {pending ? "Saving..." : mode === "create" ? "Create task" : "Save changes"}
           </Button>
         </form>
+
+        {task && (
+          <div className="space-y-3 border-t px-4 pb-4 pt-4">
+            <div className="flex items-center justify-between">
+              <Label>Attachments</Label>
+              <AssetUploader
+                scope="tasks"
+                scopeId={task.id}
+                onUploaded={() => listTaskAssetsAction(task.id).then(setAssets)}
+              />
+            </div>
+            <AssetGrid assets={assets} />
+          </div>
+        )}
+
+        {task && (
+          <div className="space-y-3 border-t px-4 pb-4 pt-4">
+            <Label>Comments</Label>
+            <CommentThread entityType="TASK" entityId={task.id} comments={comments} />
+          </div>
+        )}
       </SheetContent>
     </Sheet>
   );

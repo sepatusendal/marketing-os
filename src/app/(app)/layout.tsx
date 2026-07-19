@@ -1,5 +1,6 @@
 import { redirect } from "next/navigation";
 import { getCurrentUser } from "@/lib/auth";
+import { listNotifications, countUnreadNotifications } from "@/server/notification.service";
 import { SidebarNav } from "@/components/app-shell/sidebar-nav";
 import { Topbar } from "@/components/app-shell/topbar";
 
@@ -13,6 +14,11 @@ export default async function AppLayout({
   if (!user) {
     redirect("/login");
   }
+
+  const [notifications, unreadCount] = await Promise.all([
+    listNotifications(user.id),
+    countUnreadNotifications(user.id),
+  ]);
 
   return (
     <div className="flex min-h-screen">
@@ -28,6 +34,8 @@ export default async function AppLayout({
           name={user.name}
           email={user.email}
           avatarUrl={user.avatarUrl}
+          notifications={notifications}
+          unreadCount={unreadCount}
         />
         <main className="flex-1 p-4 md:p-6">{children}</main>
       </div>
