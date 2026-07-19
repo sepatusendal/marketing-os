@@ -1,0 +1,271 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider  = "postgresql"
+  url       = env("DATABASE_URL")
+  directUrl = env("DIRECT_URL")
+}
+
+enum Role {
+  OWNER
+  ADMIN
+  MANAGER
+  MARKETING
+  CRM
+  FINANCE
+  DESIGNER
+  VIEWER
+}
+
+enum CampaignStatus {
+  DRAFT
+  PLANNING
+  RUNNING
+  COMPLETED
+  ARCHIVED
+}
+
+enum Priority {
+  LOW
+  MEDIUM
+  HIGH
+  URGENT
+}
+
+enum TaskStatus {
+  TODO
+  IN_PROGRESS
+  REVIEW
+  COMPLETED
+}
+
+enum LeadStatus {
+  NEW
+  CONTACTED
+  QUALIFIED
+  NEGOTIATION
+  WON
+  LOST
+}
+
+enum LeadSource {
+  WEBSITE
+  WHATSAPP
+  INSTAGRAM
+  TIKTOK
+  REFERRAL
+  EVENT
+  PAID_ADS
+  EMAIL
+  OTHER
+}
+
+enum ExpenseCategory {
+  META_ADS
+  GOOGLE_ADS
+  INFLUENCER
+  EVENT
+  AGENCY
+  PRODUCTION
+  SOFTWARE
+  MISC
+}
+
+enum KnowledgeType {
+  SOP
+  EXPERIMENT
+  MEETING_NOTES
+  BEST_PRACTICE
+  CAMPAIGN_REVIEW
+  LESSONS_LEARNED
+}
+
+enum EntityType {
+  CAMPAIGN
+  TASK
+  LEAD
+  CLIENT
+  EXPENSE
+  ASSET
+  KNOWLEDGE
+  USER
+}
+
+model User {
+  id         String   @id @db.Uuid // equals Supabase auth.users.id
+  email      String   @unique
+  name       String
+  role       Role     @default(MARKETING)
+  department String?
+  avatarUrl  String?
+  isActive   Boolean  @default(true)
+  createdAt  DateTime @default(now())
+
+  campaignsOwned Campaign[]
+  tasksAssigned  Task[]
+  leadsOwned     Lead[]
+  expenses       Expense[]
+  assets         Asset[]
+  comments       Comment[]
+  activities     ActivityLog[]
+  knowledge      KnowledgeArticle[]
+  notifications  Notification[]
+}
+
+model Campaign {
+  id              String         @id @default(cuid())
+  name            String
+  objective       String?
+  department      String?
+  ownerId         String         @db.Uuid
+  owner           User           @relation(fields: [ownerId], references: [id])
+  status          CampaignStatus @default(DRAFT)
+  priority        Priority       @default(MEDIUM)
+  startDate       DateTime?
+  endDate         DateTime?
+  budgetAllocated Decimal        @default(0) @db.Decimal(14, 2)
+  targetKpi       Json? // [{ "name": "Leads", "target": 200, "unit": "leads" }]
+  actualKpi       Json? // [{ "name": "Leads", "actual": 150 }]
+  description     String?
+  createdAt       DateTime       @default(now())
+  updatedAt       DateTime       @updatedAt
+
+  tasks     Task[]
+  expenses  Expense[]
+  leads     Lead[]
+  assets    Asset[]
+  knowledge KnowledgeArticle[]
+}
+
+model Task {
+  id          String     @id @default(cuid())
+  title       String
+  description String?
+  campaignId  String? // D2: nullable
+  campaign    Campaign?  @relation(fields: [campaignId], references: [id])
+  assigneeId  String?    @db.Uuid
+  assignee    User?      @relation(fields: [assigneeId], references: [id])
+  dueDate     DateTime?
+  priority    Priority   @default(MEDIUM)
+  status      TaskStatus @default(TODO)
+  createdAt   DateTime   @default(now())
+  updatedAt   DateTime   @updatedAt
+
+  assets Asset[] // attachments
+}
+
+model Lead {
+  id               String     @id @default(cuid())
+  name             String
+  company          String?
+  industry         String?
+  source           LeadSource @default(OTHER)
+  status           LeadStatus @default(NEW)
+  ownerId          String?    @db.Uuid
+  owner            User?      @relation(fields: [ownerId], references: [id])
+  campaignId       String? // D3: attribution
+  campaign         Campaign?  @relation(fields: [campaignId], references: [id])
+  potentialRevenue Decimal?   @db.Decimal(14, 2)
+  lastContactAt    DateTime?
+  notes            String?
+  createdAt        DateTime   @default(now())
+  updatedAt        DateTime   @updatedAt
+
+  client Client?
+}
+
+model Client {
+  id        String   @id @default(cuid())
+  leadId    String   @unique
+  lead      Lead     @relation(fields: [leadId], references: [id])
+  name      String
+  company   String?
+  since     DateTime @default(now())
+  notes     String?
+  createdAt DateTime @default(now())
+}
+
+model Expense {
+  id          String          @id @default(cuid())
+  campaignId  String
+  campaign    Campaign        @relation(fields: [campaignId], references: [id])
+  category    ExpenseCategory
+  description String
+  amount      Decimal         @db.Decimal(14, 2)
+  spentAt     DateTime        @default(now())
+  createdById String          @db.Uuid
+  createdBy   User            @relation(fields: [createdById], references: [id])
+  createdAt   DateTime        @default(now())
+}
+
+model Asset {
+  id          String    @id @default(cuid())
+  fileName    String
+  storagePath String // path in Supabase Storage bucket
+  fileType    String
+  sizeBytes   Int
+  campaignId  String?
+  campaign    Campaign? @relation(fields: [campaignId], references: [id])
+  taskId      String?
+  task        Task?     @relation(fields: [taskId], references: [id])
+  uploaderId  String    @db.Uuid
+  uploader    User      @relation(fields: [uploaderId], references: [id])
+  tags        String[]
+  createdAt   DateTime  @default(now())
+}
+
+model KnowledgeArticle {
+  id         String        @id @default(cuid())
+  title      String
+  type       KnowledgeType
+  body       String // markdown
+  authorId   String        @db.Uuid
+  author     User          @relation(fields: [authorId], references: [id])
+  campaignId String?
+  campaign   Campaign?     @relation(fields: [campaignId], references: [id])
+  tags       String[]
+  createdAt  DateTime      @default(now())
+  updatedAt  DateTime      @updatedAt
+}
+
+model Comment {
+  id         String     @id @default(cuid())
+  entityType EntityType
+  entityId   String
+  authorId   String     @db.Uuid
+  author     User       @relation(fields: [authorId], references: [id])
+  body       String
+  createdAt  DateTime   @default(now())
+
+  @@index([entityType, entityId])
+}
+
+model ActivityLog {
+  id         String     @id @default(cuid())
+  actorId    String     @db.Uuid
+  actor      User       @relation(fields: [actorId], references: [id])
+  entityType EntityType
+  entityId   String
+  action     String // "created", "status_changed", "budget_added", ...
+  meta       Json? // { from: "DRAFT", to: "RUNNING" }
+  createdAt  DateTime   @default(now())
+
+  @@index([entityType, entityId])
+  @@index([createdAt])
+}
+
+model Notification {
+  id         String      @id @default(cuid())
+  userId     String      @db.Uuid
+  user       User        @relation(fields: [userId], references: [id])
+  type       String // "task_assigned", "mention", "campaign_status", ...
+  message    String
+  entityType EntityType?
+  entityId   String?
+  readAt     DateTime?
+  createdAt  DateTime    @default(now())
+
+  @@index([userId, readAt])
+}
