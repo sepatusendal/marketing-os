@@ -17,7 +17,13 @@ Next.js (App Router) · TypeScript · Tailwind + shadcn/ui · Prisma · Supabase
 
 ## Process
 Build one phase at a time per PRD §11. Finish the phase's Definition of Done before moving on.
-**MVP complete** (v0.9) — Phase 0 through Phase 8 done and verified end-to-end. Remaining before a real
-launch: the go-live checklist in PRD §12.9 (production Supabase project, Vercel deployment + Deployment
-Protection, custom domain) — infrastructure decisions intentionally left for explicit user action, not
-automated. Next up: the UI/UX revamp (deferred per user request until the MVP was functionally complete).
+**MVP complete + UI/UX revamp done** (v1.0) — Phase 0 through Phase 8 done and verified end-to-end,
+plus a full design-system revamp (indigo accent, collapsible sidebar, dashboard-as-daily-briefing,
+verified in dark mode + mobile). Remaining before a real launch: the go-live checklist in PRD §12.9
+(production Supabase project, Vercel deployment + Deployment Protection, custom domain) — infrastructure
+decisions intentionally left for explicit user action, not automated.
+
+## Design system
+Indigo/violet accent (`--primary`), warm-neutral light bg / deep-charcoal dark bg, defined in
+`src/app/globals.css`. Card/Table/Badge/Button primitives read colors from CSS variables — new UI should
+do the same rather than hardcoding grayscale/colors, so future palette changes propagate automatically.
