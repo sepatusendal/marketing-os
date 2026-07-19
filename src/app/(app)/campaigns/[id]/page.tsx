@@ -1,4 +1,5 @@
 import { notFound } from "next/navigation";
+import Link from "next/link";
 import { requireUser } from "@/lib/auth";
 import { authorize } from "@/lib/rbac";
 import { Role } from "@prisma/client";
@@ -12,6 +13,7 @@ import { getAllowedTransitions } from "@/lib/campaign-status";
 import { AssetUploader } from "@/components/modules/assets/asset-uploader";
 import { AssetGrid } from "@/components/modules/assets/asset-grid";
 import { listCommentsForEntity } from "@/server/comment.service";
+import { listKnowledgeForCampaign } from "@/server/knowledge.service";
 import { CommentThread } from "@/components/modules/comments/comment-thread";
 import { CampaignForm } from "@/components/modules/campaigns/campaign-form";
 import { StatusControl } from "@/components/modules/campaigns/status-control";
@@ -36,7 +38,7 @@ export default async function CampaignDetailPage({
   const campaign = await getCampaign(id);
   if (!campaign) notFound();
 
-  const [users, activity, tasks, campaignOptions, expenses, breakdown, assets, comments] =
+  const [users, activity, tasks, campaignOptions, expenses, breakdown, assets, comments, articles] =
     await Promise.all([
       listActiveUsers(),
       listCampaignTimeline(id),
@@ -46,6 +48,7 @@ export default async function CampaignDetailPage({
       categoryBreakdown(id),
       listAssetsForCampaign(id),
       listCommentsForEntity("CAMPAIGN", id),
+      listKnowledgeForCampaign(id),
     ]);
 
   const assetsWithUrls = await Promise.all(
@@ -107,6 +110,24 @@ export default async function CampaignDetailPage({
             <p className="text-sm text-muted-foreground">
               You don&apos;t have permission to edit this campaign.
             </p>
+          )}
+
+          {articles.length > 0 && (
+            <div className="mt-6 space-y-2">
+              <h3 className="text-sm font-medium">Linked Knowledge Articles</h3>
+              <ul className="space-y-1">
+                {articles.map((a) => (
+                  <li key={a.id}>
+                    <Link href={`/knowledge/${a.id}`} className="text-sm hover:underline">
+                      {a.title}
+                    </Link>
+                    <span className="ml-2 text-xs text-muted-foreground">
+                      {a.type.replaceAll("_", " ")}
+                    </span>
+                  </li>
+                ))}
+              </ul>
+            </div>
           )}
         </TabsContent>
 
