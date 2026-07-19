@@ -7,7 +7,12 @@ import { listActiveUsers } from "@/server/user.service";
 import { listCampaignTimeline } from "@/server/activity.service";
 import { listTasksForCampaign } from "@/server/task.service";
 import { listExpenses, categoryBreakdown } from "@/server/expense.service";
+import { listAssetsForCampaign, getSignedDownloadUrl } from "@/server/asset.service";
 import { getAllowedTransitions } from "@/lib/campaign-status";
+import { AssetUploader } from "@/components/modules/assets/asset-uploader";
+import { AssetGrid } from "@/components/modules/assets/asset-grid";
+import { listCommentsForEntity } from "@/server/comment.service";
+import { CommentThread } from "@/components/modules/comments/comment-thread";
 import { CampaignForm } from "@/components/modules/campaigns/campaign-form";
 import { StatusControl } from "@/components/modules/campaigns/status-control";
 import { CampaignTimeline } from "@/components/modules/campaigns/campaign-timeline";
@@ -31,14 +36,21 @@ export default async function CampaignDetailPage({
   const campaign = await getCampaign(id);
   if (!campaign) notFound();
 
-  const [users, activity, tasks, campaignOptions, expenses, breakdown] = await Promise.all([
-    listActiveUsers(),
-    listCampaignTimeline(id),
-    listTasksForCampaign(id),
-    listCampaignOptions(),
-    listExpenses({ campaignId: id }),
-    categoryBreakdown(id),
-  ]);
+  const [users, activity, tasks, campaignOptions, expenses, breakdown, assets, comments] =
+    await Promise.all([
+      listActiveUsers(),
+      listCampaignTimeline(id),
+      listTasksForCampaign(id),
+      listCampaignOptions(),
+      listExpenses({ campaignId: id }),
+      categoryBreakdown(id),
+      listAssetsForCampaign(id),
+      listCommentsForEntity("CAMPAIGN", id),
+    ]);
+
+  const assetsWithUrls = await Promise.all(
+    assets.map(async (a) => ({ ...a, url: await getSignedDownloadUrl(a.storagePath) })),
+  );
 
   const canEdit = authorize(user, "campaign:edit_own", { ownerId: campaign.ownerId });
   const canEditExpense = authorize(user, "expense:edit");
@@ -132,16 +144,20 @@ export default async function CampaignDetailPage({
           </p>
         </TabsContent>
 
-        <TabsContent value="assets" className="pt-4">
-          <p className="text-sm text-muted-foreground">
-            File uploads and previews land in Phase 5.
-          </p>
+        <TabsContent value="assets" className="space-y-4 pt-4">
+          <div className="flex justify-end">
+            <AssetUploader scope="campaigns" scopeId={campaign.id} />
+          </div>
+          <AssetGrid assets={assetsWithUrls} />
         </TabsContent>
 
         <TabsContent value="notes" className="pt-4">
-          <p className="text-sm text-muted-foreground">
-            Comment thread lands in Phase 5.
-          </p>
+          <CommentThread
+            entityType="CAMPAIGN"
+            entityId={campaign.id}
+            comments={comments}
+            revalidatePath={`/campaigns/${campaign.id}`}
+          />
         </TabsContent>
       </Tabs>
     </div>
