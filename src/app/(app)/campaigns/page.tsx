@@ -15,6 +15,7 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
+import { Badge } from "@/components/ui/badge";
 import type { CampaignStatus } from "@prisma/client";
 
 export default async function CampaignsPage({
@@ -91,6 +92,11 @@ export default async function CampaignsPage({
                   </TableCell>
                   <TableCell className="text-right text-sm">
                     {formatIDR(c.budgetUsed)} / {formatIDR(c.budgetAllocated.toString())}
+                    {c.budgetUsed > Number(c.budgetAllocated) && (
+                      <Badge variant="destructive" className="ml-2">
+                        Over
+                      </Badge>
+                    )}
                   </TableCell>
                 </TableRow>
               ))}

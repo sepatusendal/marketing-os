@@ -4,14 +4,19 @@ import { authorize } from "@/lib/rbac";
 import { Role } from "@prisma/client";
 import { getCampaign, listCampaignOptions } from "@/server/campaign.service";
 import { listActiveUsers } from "@/server/user.service";
-import { listActivityForEntity } from "@/server/activity.service";
+import { listCampaignTimeline } from "@/server/activity.service";
 import { listTasksForCampaign } from "@/server/task.service";
+import { listExpenses, categoryBreakdown } from "@/server/expense.service";
 import { getAllowedTransitions } from "@/lib/campaign-status";
 import { CampaignForm } from "@/components/modules/campaigns/campaign-form";
 import { StatusControl } from "@/components/modules/campaigns/status-control";
 import { CampaignTimeline } from "@/components/modules/campaigns/campaign-timeline";
 import { PriorityBadge } from "@/components/modules/campaigns/status-badge";
 import { KanbanBoard } from "@/components/modules/tasks/kanban-board";
+import { ExpenseHistoryTable } from "@/components/modules/budget/expense-history-table";
+import { CategoryBreakdown } from "@/components/modules/budget/category-breakdown";
+import { AddExpenseDialog } from "@/components/modules/budget/add-expense-dialog";
+import { Badge } from "@/components/ui/badge";
 import { formatIDR } from "@/lib/format";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 
@@ -26,16 +31,20 @@ export default async function CampaignDetailPage({
   const campaign = await getCampaign(id);
   if (!campaign) notFound();
 
-  const [users, activity, tasks, campaignOptions] = await Promise.all([
+  const [users, activity, tasks, campaignOptions, expenses, breakdown] = await Promise.all([
     listActiveUsers(),
-    listActivityForEntity("CAMPAIGN", id),
+    listCampaignTimeline(id),
     listTasksForCampaign(id),
     listCampaignOptions(),
+    listExpenses({ campaignId: id }),
+    categoryBreakdown(id),
   ]);
 
   const canEdit = authorize(user, "campaign:edit_own", { ownerId: campaign.ownerId });
+  const canEditExpense = authorize(user, "expense:edit");
   const canUnarchive = user.role === Role.OWNER || user.role === Role.ADMIN;
   const allowedTransitions = getAllowedTransitions(campaign.status, canUnarchive);
+  const isOverAllocated = campaign.budgetUsed > Number(campaign.budgetAllocated);
 
   return (
     <div className="space-y-4">
@@ -61,6 +70,7 @@ export default async function CampaignDetailPage({
         <span>
           Budget: {formatIDR(campaign.budgetUsed)} / {formatIDR(campaign.budgetAllocated.toString())}
         </span>
+        {isOverAllocated && <Badge variant="destructive">Over budget</Badge>}
       </div>
 
       <Tabs defaultValue="overview">
@@ -102,15 +112,23 @@ export default async function CampaignDetailPage({
           />
         </TabsContent>
 
-        <TabsContent value="budget" className="pt-4">
-          <p className="text-sm text-muted-foreground">
-            Expense tracking and budget breakdown land in Phase 3.
-          </p>
+        <TabsContent value="budget" className="space-y-6 pt-4">
+          <div className="flex items-center justify-between">
+            <div className="text-sm text-muted-foreground">
+              {formatIDR(campaign.budgetUsed)} used of{" "}
+              {formatIDR(campaign.budgetAllocated.toString())} allocated
+            </div>
+            {canEditExpense && (
+              <AddExpenseDialog campaignOptions={campaignOptions} defaultCampaignId={campaign.id} />
+            )}
+          </div>
+          <CategoryBreakdown breakdown={breakdown} />
+          <ExpenseHistoryTable expenses={expenses} showCampaign={false} />
         </TabsContent>
 
         <TabsContent value="analytics" className="pt-4">
           <p className="text-sm text-muted-foreground">
-            KPI/budget-burn visuals land alongside Budget and Leads (Phase 3–4).
+            KPI/budget-burn visuals land alongside Leads (Phase 4/6).
           </p>
         </TabsContent>
 

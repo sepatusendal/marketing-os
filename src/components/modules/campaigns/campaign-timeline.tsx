@@ -1,21 +1,29 @@
-import { formatDate } from "@/lib/format";
+import { formatDate, formatIDR } from "@/lib/format";
 import type { ActivityLog, User } from "@prisma/client";
 
 type TimelineEntry = ActivityLog & { actor: User };
 
-const ACTION_LABELS: Record<string, string> = {
-  created: "created this campaign",
-  updated: "updated campaign details",
-  status_changed: "changed the status",
-};
-
 function describe(entry: TimelineEntry) {
-  const label = ACTION_LABELS[entry.action] ?? entry.action;
-  if (entry.action === "status_changed" && entry.meta) {
-    const meta = entry.meta as { from?: string; to?: string };
-    return `moved status from ${meta.from} to ${meta.to}`;
+  const meta = entry.meta as Record<string, unknown> | null;
+
+  switch (`${entry.entityType}:${entry.action}`) {
+    case "CAMPAIGN:created":
+      return "created this campaign";
+    case "CAMPAIGN:updated":
+      return "updated campaign details";
+    case "CAMPAIGN:status_changed":
+      return `moved campaign status from ${meta?.from} to ${meta?.to}`;
+    case "TASK:created":
+      return "created a task";
+    case "TASK:updated":
+      return "updated a task";
+    case "TASK:status_changed":
+      return `moved a task from ${meta?.from} to ${meta?.to}`;
+    case "EXPENSE:created":
+      return `logged an expense of ${formatIDR(String(meta?.amount ?? 0))}`;
+    default:
+      return entry.action;
   }
-  return label;
 }
 
 export function CampaignTimeline({ entries }: { entries: TimelineEntry[] }) {
