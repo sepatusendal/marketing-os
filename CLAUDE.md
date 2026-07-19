@@ -17,4 +17,4 @@ Next.js (App Router) · TypeScript · Tailwind + shadcn/ui · Prisma · Supabase
 
 ## Process
 Build one phase at a time per PRD §11. Finish the phase's Definition of Done before moving on.
-Current phase: **Phase 5** (Assets, Comments & Notifications). Phase 0 (v0.1), Phase 1 (v0.2), Phase 2 (v0.3), Phase 3 (v0.4), Phase 4 (v0.5) done and verified end-to-end.
+Current phase: **Phase 6** (Dashboard). Phase 0 (v0.1) through Phase 5 (v0.6) done and verified end-to-end.
