@@ -17,9 +17,10 @@ Next.js (App Router) · TypeScript · Tailwind + shadcn/ui · Prisma · Supabase
 
 ## Process
 Build one phase at a time per PRD §11. Finish the phase's Definition of Done before moving on.
-**MVP complete + UI/UX revamp done** (v1.0) — Phase 0 through Phase 8 done and verified end-to-end,
+**MVP complete + UI/UX revamp done** (v1.1) — Phase 0 through Phase 8 done and verified end-to-end,
 plus a full design-system revamp (indigo accent, collapsible sidebar, dashboard-as-daily-briefing,
-verified in dark mode + mobile). Remaining before a real launch: the go-live checklist in PRD §12.9
+campaign hero header, real budget/lead-funnel charts, hover micro-interactions — verified in dark
+mode + mobile). Remaining before a real launch: the go-live checklist in PRD §12.9
 (production Supabase project, Vercel deployment + Deployment Protection, custom domain) — infrastructure
 decisions intentionally left for explicit user action, not automated.
 
