@@ -17,13 +17,12 @@ Next.js (App Router) · TypeScript · Tailwind + shadcn/ui · Prisma · Supabase
 
 ## Process
 Build one phase at a time per PRD §11. Finish the phase's Definition of Done before moving on.
-**MVP complete + UI/UX revamp + Lead Follow-up SLA done** (v1.3) — Phase 0 through Phase 8 done and
-verified end-to-end, plus a full design-system revamp (indigo accent, collapsible sidebar,
-dashboard-as-daily-briefing, campaign hero header, real charts, calmer/larger type scale, empty-state
-illustrations) and a Lead Follow-up SLA system (48h staleness tracking, WhatsApp quick-action,
-dashboard widget, auto-notifications — added from a feature brainstorm grounded in the team's actual
-top pain point, not speculative scope). Remaining before a real launch: the go-live checklist in
-PRD §12.9 (production Supabase project, Vercel deployment + Deployment Protection, custom domain) —
+**MVP complete + UI/UX revamp + Lead Follow-up SLA + advanced features (1/2) done** (v1.4) — Phase 0
+through Phase 8 done and verified end-to-end, a full design-system revamp, a Lead Follow-up SLA system,
+and (from a HubSpot-inspired brainstorm) lead scoring, per-lead activity timeline, full JSON backup
+export, entity-level CSV export, and bulk lead CSV import. Saved views/segments and light automation
+rules are next (part 2 of the same brainstorm). Remaining before a real launch: the go-live checklist
+in PRD §12.9 (production Supabase project, Vercel deployment + Deployment Protection, custom domain) —
 infrastructure decisions intentionally left for explicit user action, not automated.
 
 ## Lead follow-up SLA
