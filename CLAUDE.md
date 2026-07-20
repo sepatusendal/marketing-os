@@ -17,12 +17,21 @@ Next.js (App Router) · TypeScript · Tailwind + shadcn/ui · Prisma · Supabase
 
 ## Process
 Build one phase at a time per PRD §11. Finish the phase's Definition of Done before moving on.
-**MVP complete + UI/UX revamp done** (v1.1) — Phase 0 through Phase 8 done and verified end-to-end,
-plus a full design-system revamp (indigo accent, collapsible sidebar, dashboard-as-daily-briefing,
-campaign hero header, real budget/lead-funnel charts, hover micro-interactions — verified in dark
-mode + mobile). Remaining before a real launch: the go-live checklist in PRD §12.9
-(production Supabase project, Vercel deployment + Deployment Protection, custom domain) — infrastructure
-decisions intentionally left for explicit user action, not automated.
+**MVP complete + UI/UX revamp + Lead Follow-up SLA done** (v1.2) — Phase 0 through Phase 8 done and
+verified end-to-end, plus a full design-system revamp (indigo accent, collapsible sidebar,
+dashboard-as-daily-briefing, campaign hero header, real charts, calmer/larger type scale, empty-state
+illustrations) and a Lead Follow-up SLA system (48h staleness tracking, WhatsApp quick-action,
+dashboard widget, auto-notifications — added from a feature brainstorm grounded in the team's actual
+top pain point, not speculative scope). Remaining before a real launch: the go-live checklist in
+PRD §12.9 (production Supabase project, Vercel deployment + Deployment Protection, custom domain) —
+infrastructure decisions intentionally left for explicit user action, not automated.
+
+## Lead follow-up SLA
+`src/lib/lead-followup.ts` is the single source of truth for the 48h staleness threshold — used by the
+lead card indicator, the dashboard widget, and the notification trigger. No background job runner
+exists yet; overdue-lead notifications are triggered opportunistically from the client on app load
+(`FollowupChecker` in the app layout) and de-duplicate against existing notifications since the lead's
+last contact.
 
 ## Design system
 Indigo/violet accent (`--primary`), warm-neutral light bg / deep-charcoal dark bg, defined in
