@@ -14,6 +14,7 @@ import {
   getLead,
 } from "@/server/lead.service";
 import { createLeadSchema, updateLeadSchema, updateLeadStatusSchema } from "@/lib/schemas/lead";
+import { LeadSource } from "@prisma/client";
 
 export type ActionState = {
   error?: string;
@@ -21,6 +22,73 @@ export type ActionState = {
   success?: boolean;
   warning?: string;
 };
+
+export type ImportRow = {
+  name: string;
+  company?: string;
+  phone?: string;
+  industry?: string;
+  source?: string;
+  potentialRevenue?: string;
+  notes?: string;
+};
+
+export type ImportResult = {
+  created: number;
+  duplicates: number;
+  invalid: { row: number; name: string; error: string }[];
+};
+
+const SOURCE_VALUES = new Set(Object.values(LeadSource));
+
+export async function bulkImportLeadsAction(rows: ImportRow[]): Promise<ImportResult> {
+  const user = await requireUser();
+  if (!authorize(user, "lead:crud")) {
+    throw new Error("You don't have permission to import leads.");
+  }
+
+  const result: ImportResult = { created: 0, duplicates: 0, invalid: [] };
+
+  for (let i = 0; i < rows.length; i++) {
+    const row = rows[i];
+    const source = row.source?.toUpperCase().replace(/\s+/g, "_") ?? "OTHER";
+
+    const parsed = createLeadSchema.safeParse({
+      name: row.name,
+      company: row.company ?? "",
+      phone: row.phone ?? "",
+      industry: row.industry ?? "",
+      source: SOURCE_VALUES.has(source as LeadSource) ? source : "OTHER",
+      potentialRevenue: row.potentialRevenue ?? "",
+      notes: row.notes ?? "",
+    });
+
+    if (!parsed.success) {
+      result.invalid.push({
+        row: i + 1,
+        name: row.name || "(no name)",
+        error: parsed.error.issues[0]?.message ?? "Invalid row",
+      });
+      continue;
+    }
+
+    const duplicate = await findDuplicateLead(parsed.data.name, parsed.data.company);
+    if (duplicate) result.duplicates++;
+
+    const lead = await createLead(parsed.data);
+    await logActivity({
+      actorId: user.id,
+      entityType: "LEAD",
+      entityId: lead.id,
+      action: "created",
+      meta: { source: "csv_import" },
+    });
+    result.created++;
+  }
+
+  revalidatePath("/leads");
+  return result;
+}
 
 export async function createLeadAction(
   _prevState: ActionState,

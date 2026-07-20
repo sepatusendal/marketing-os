@@ -2,6 +2,8 @@
 
 import { formatIDR } from "@/lib/format";
 import { FOLLOWUP_SLA_HOURS, getLeadStaleness } from "@/lib/lead-followup";
+import { computeLeadScore } from "@/lib/lead-score";
+import { LeadScoreBadge } from "./lead-score-badge";
 import { cn } from "@/lib/utils";
 import type { Lead, User, Campaign, Client } from "@prisma/client";
 
@@ -22,6 +24,11 @@ export function LeadCard({
   onOpen: (lead: LeadWithRelations) => void;
 }) {
   const staleness = getLeadStaleness(lead);
+  const score = computeLeadScore({
+    source: lead.source,
+    status: lead.status,
+    potentialRevenue: lead.potentialRevenue != null ? Number(lead.potentialRevenue) : null,
+  });
 
   return (
     <div
@@ -38,6 +45,7 @@ export function LeadCard({
     >
       <div className="flex items-center justify-between gap-2">
         <div className="font-medium">{lead.name}</div>
+        <LeadScoreBadge score={score} className="shrink-0" />
         {staleness === "overdue" && (
           <span
             title={`No contact in ${FOLLOWUP_SLA_HOURS}+ hours`}

@@ -4,8 +4,10 @@ import { useActionState, useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
 import { listCommentsAction } from "@/lib/actions/comment";
+import { listLeadTimelineAction } from "@/lib/actions/activity";
 import { CommentThread } from "@/components/modules/comments/comment-thread";
-import type { Comment, User as PrismaUser } from "@prisma/client";
+import { CampaignTimeline as ActivityTimeline } from "@/components/modules/campaigns/campaign-timeline";
+import type { ActivityLog, Comment, User as PrismaUser } from "@prisma/client";
 import {
   Sheet,
   SheetContent,
@@ -70,6 +72,7 @@ export function LeadDrawer({
   const action = mode === "create" ? createLeadAction : updateLeadAction;
   const [state, formAction, pending] = useActionState<ActionState, FormData>(action, {});
   const [comments, setComments] = useState<(Comment & { author: PrismaUser })[]>([]);
+  const [timeline, setTimeline] = useState<(ActivityLog & { actor: PrismaUser })[]>([]);
 
   useEffect(() => {
     if (state.success) {
@@ -85,6 +88,7 @@ export function LeadDrawer({
   useEffect(() => {
     if (!lead || !open) return;
     listCommentsAction("LEAD", lead.id).then(setComments);
+    listLeadTimelineAction(lead.id).then(setTimeline);
   }, [lead, open]);
 
   const fieldError = (field: string) => state.fieldErrors?.[field]?.[0];
@@ -303,6 +307,13 @@ export function LeadDrawer({
                   )}
                 </div>
               )}
+            </div>
+          )}
+
+          {lead && (
+            <div className="space-y-3 border-t pt-4">
+              <Label>Timeline</Label>
+              <ActivityTimeline entries={timeline} />
             </div>
           )}
 

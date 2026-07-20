@@ -18,6 +18,9 @@ import {
 import { Badge } from "@/components/ui/badge";
 import { EmptyIllustration } from "@/components/ui/empty-illustration";
 import { Role, type CampaignStatus } from "@prisma/client";
+import { buttonVariants } from "@/components/ui/button";
+import { cn } from "@/lib/utils";
+import { Download } from "lucide-react";
 
 export default async function CampaignsPage({
   searchParams,
@@ -41,6 +44,17 @@ export default async function CampaignsPage({
     listActiveUsers(),
   ]);
 
+  const exportQuery = new URLSearchParams(
+    Object.fromEntries(
+      Object.entries({
+        status: params.status,
+        department: params.department,
+        ownerId: params.ownerId,
+        search: params.search,
+      }).filter(([, v]) => v),
+    ) as Record<string, string>,
+  ).toString();
+
   return (
     <div className="space-y-4">
       <div className="flex flex-wrap items-center justify-between gap-2">
@@ -48,7 +62,16 @@ export default async function CampaignsPage({
           <h1 className="text-2xl font-semibold">Campaigns</h1>
           <p className="text-muted-foreground">All marketing campaigns in one place.</p>
         </div>
-        {canCreate && <CreateCampaignDialog users={users} />}
+        <div className="flex items-center gap-2">
+          <a
+            href={`/api/campaigns/export?${exportQuery}`}
+            className={cn(buttonVariants({ variant: "outline", size: "sm" }))}
+          >
+            <Download className="mr-1 h-4 w-4" />
+            Export CSV
+          </a>
+          {canCreate && <CreateCampaignDialog users={users} />}
+        </div>
       </div>
 
       <CampaignFilters departments={departments} owners={users} />
