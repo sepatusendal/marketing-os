@@ -5,6 +5,7 @@ import { PriorityBadge } from "@/components/modules/campaigns/status-badge";
 import { formatDate } from "@/lib/format";
 import { cn } from "@/lib/utils";
 import { TASK_LABEL_HEX, type TaskLabelColor } from "@/lib/task-labels";
+import { ACCENT_BORDER, ACCENT_WASH, PRIORITY_ACCENT } from "@/lib/accent-colors";
 import type { Task, User, Campaign, BoardColumn, TaskChecklistItem, Asset } from "@prisma/client";
 
 export type TaskWithRelations = Task & {
@@ -27,6 +28,7 @@ export function TaskCard({
   const isOverdue =
     task.dueDate && task.status !== "COMPLETED" && new Date(task.dueDate) < new Date();
   const doneCount = task.checklistItems.filter((i) => i.isDone).length;
+  const accent = PRIORITY_ACCENT[task.priority];
 
   return (
     <div
@@ -35,7 +37,11 @@ export function TaskCard({
         e.dataTransfer.setData("text/plain", task.id);
       }}
       onClick={() => onOpen(task)}
-      className="cursor-grab space-y-2 rounded-md border bg-card p-3 text-sm shadow-sm transition-all hover:-translate-y-0.5 hover:border-primary/30 hover:shadow-md active:cursor-grabbing active:translate-y-0"
+      className={cn(
+        "cursor-grab space-y-2 rounded-md border border-l-2 bg-card p-3 text-sm shadow-sm transition-all hover:-translate-y-0.5 hover:shadow-md active:cursor-grabbing active:translate-y-0",
+        ACCENT_BORDER[accent],
+        ACCENT_WASH[accent],
+      )}
     >
       {task.labels.length > 0 && (
         <div className="flex gap-1">

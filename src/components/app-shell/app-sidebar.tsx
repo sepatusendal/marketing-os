@@ -32,7 +32,7 @@ export function AppSidebar() {
   return (
     <aside
       className={cn(
-        "hidden shrink-0 flex-col border-r bg-sidebar text-sidebar-foreground transition-[width] duration-200 ease-in-out md:flex",
+        "glass-panel hidden shrink-0 flex-col border-r text-sidebar-foreground transition-[width] duration-200 ease-in-out md:flex",
         collapsed ? "w-16" : "w-64",
       )}
     >
