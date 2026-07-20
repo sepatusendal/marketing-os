@@ -5,6 +5,13 @@ import type { CreateTaskInput, UpdateTaskInput } from "@/lib/schemas/task";
 const TASK_INCLUDE = {
   campaign: { select: { id: true, name: true } },
   assignee: true,
+  column: true,
+  checklistItems: { orderBy: { position: "asc" } },
+  assets: {
+    where: { fileType: { startsWith: "image" } },
+    take: 1,
+    orderBy: { createdAt: "asc" },
+  },
 } satisfies Prisma.TaskInclude;
 
 export async function listMyTasks(assigneeId: string) {
@@ -50,6 +57,11 @@ export async function getTask(id: string) {
 }
 
 export async function createTask(input: CreateTaskInput) {
+  const defaultColumn = await prisma.boardColumn.findFirst({
+    where: { status: "TODO" },
+    orderBy: { position: "asc" },
+  });
+
   return prisma.task.create({
     data: {
       title: input.title,
@@ -58,6 +70,7 @@ export async function createTask(input: CreateTaskInput) {
       assigneeId: input.assigneeId || null,
       dueDate: input.dueDate ? new Date(input.dueDate) : null,
       priority: input.priority,
+      columnId: defaultColumn?.id ?? null,
     },
     include: TASK_INCLUDE,
   });
@@ -78,6 +91,44 @@ export async function updateTask(input: UpdateTaskInput) {
   });
 }
 
-export async function updateTaskStatus(id: string, status: TaskStatus) {
-  return prisma.task.update({ where: { id }, data: { status }, include: TASK_INCLUDE });
+/** Moving a task to a column also updates its status to that column's stage
+ * so dashboard/report aggregates (which key off Task.status) never drift
+ * from what the board visually shows. */
+export async function updateTaskColumn(id: string, columnId: string) {
+  const column = await prisma.boardColumn.findUniqueOrThrow({ where: { id: columnId } });
+  return prisma.task.update({
+    where: { id },
+    data: { columnId, status: column.status },
+    include: TASK_INCLUDE,
+  });
+}
+
+export async function updateTaskLabels(id: string, labels: string[]) {
+  return prisma.task.update({ where: { id }, data: { labels }, include: TASK_INCLUDE });
+}
+
+export async function addChecklistItem(taskId: string, label: string) {
+  const last = await prisma.taskChecklistItem.findFirst({
+    where: { taskId },
+    orderBy: { position: "desc" },
+  });
+  return prisma.taskChecklistItem.create({
+    data: { taskId, label, position: last ? last.position + 1 : 0 },
+  });
+}
+
+export async function toggleChecklistItem(id: string, isDone: boolean) {
+  return prisma.taskChecklistItem.update({ where: { id }, data: { isDone } });
+}
+
+export async function deleteChecklistItem(id: string) {
+  return prisma.taskChecklistItem.delete({ where: { id } });
+}
+
+export async function getChecklistItemTaskId(id: string) {
+  const item = await prisma.taskChecklistItem.findUnique({
+    where: { id },
+    select: { taskId: true },
+  });
+  return item?.taskId ?? null;
 }

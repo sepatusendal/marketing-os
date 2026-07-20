@@ -18,6 +18,24 @@ export function describeActivity(entry: ActivityLog) {
       return "updated a task";
     case "TASK:status_changed":
       return `moved a task from ${meta?.from} to ${meta?.to}`;
+    case "TASK:labels_changed":
+      return "changed a task's labels";
+    case "TASK:checklist_item_added":
+      return `added a checklist item "${meta?.label ?? ""}"`;
+    case "TASK:checklist_item_checked":
+      return `checked off "${meta?.label ?? ""}"`;
+    case "TASK:checklist_item_unchecked":
+      return `unchecked "${meta?.label ?? ""}"`;
+    case "TASK:checklist_item_removed":
+      return "removed a checklist item";
+    case "BOARD_COLUMN:created":
+      return `created the "${meta?.name ?? ""}" column`;
+    case "BOARD_COLUMN:updated":
+      return `updated the "${meta?.name ?? ""}" column`;
+    case "BOARD_COLUMN:deleted":
+      return "deleted a board column";
+    case "BOARD_COLUMN:reordered":
+      return "reordered board columns";
     case "EXPENSE:created":
       return `logged an expense of ${formatIDR(String(meta?.amount ?? 0))}`;
     case "LEAD:created":

@@ -40,7 +40,7 @@ Marketing work is currently scattered across Spreadsheets (budget), Google Drive
 
 ## 4. Non-Goals (MVP)
 
-No marketing automation, no WhatsApp/email automation, no AI features, no Meta Ads / Google Ads / Google Analytics integrations, no finance ERP, no HR, no full sales CRM. These are explicitly deferred to the roadmap (Section 13).
+No marketing automation, no WhatsApp automation, no AI features, no Meta Ads / Google Ads / Google Analytics integrations, no finance ERP, no HR, no full sales CRM. Email is in scope only for notification delivery (D10) — not marketing/broadcast email. These are explicitly deferred to the roadmap (Section 13).
 
 ---
 
@@ -56,10 +56,10 @@ These decisions are final for the MVP. Claude Code should build against them wit
 | D4 | **Single workspace, single company.** Multi-workspace/multi-company is V5. No `Team` hierarchy in MVP — users have a `department` field instead. |
 | D5 | **Client = a converted Lead.** When a lead reaches status `WON`, the user can convert it into a Client record. Clients are read-mostly in MVP. |
 | D6 | **Reports (MVP) = 3 canned reports + CSV export.** Custom report builder is V2. |
-| D7 | **Authentication is invite-only.** Public signup is disabled. Admins invite users by email. |
+| D7 | **Authentication is invite-only.** Public signup is disabled. Admins invite users by email. Two login methods are supported for an invited email: password, or "Sign in with Google" (Supabase OAuth) — both still gated by a prior invite; the OAuth callback rejects any Google account whose email has no existing `User` row instead of auto-provisioning one. |
 | D8 | **Single currency (IDR).** Money stored as `Decimal(14,2)`. |
 | D9 | **Campaign KPIs stored as JSON** (`targetKpi`, `actualKpi` arrays) — no separate KPI table in MVP. Actual KPI values are entered manually. |
-| D10 | **Notifications are in-app only.** No email/WhatsApp notifications in MVP. |
+| D10 | **Notifications are in-app plus email.** Every `Notification` (task assigned, mention, campaign status, lead-won, budget threshold) is also sent by email via Resend, based on a per-user opt-out toggle (`User.emailNotifications`, default on). Sends are synchronous best-effort inside the triggering request — a provider outage never fails the mutation. WhatsApp notifications remain out of scope for MVP. *(Amended from the original "in-app only" MVP decision — see CLAUDE.md changelog.)* |
 | D11 | **RBAC is enforced server-side at the application layer** (single `authorize()` helper). Supabase RLS is enabled as defense-in-depth with default-deny, but Prisma connects with the service role, so the app layer is the source of truth for permissions. |
 
 ---
@@ -406,12 +406,16 @@ Detail view tabs:
 
 - **My Tasks** view (default): kanban of tasks assigned to me across all campaigns.
 - **All Tasks** view (Manager+): filterable table/kanban by campaign, assignee, status, priority.
-- Task drawer: title, description, campaign link, assignee, due date, priority, status, attachments, comments.
+- Task drawer: title, description, campaign link, assignee, due date, priority, column, labels, checklist, attachments, comments.
 - Creating a task from a campaign pre-fills `campaignId`; standalone creation allowed (D2).
+- **Board columns** are workspace-wide (`BoardColumn`), shared by the global Tasks board and every campaign's Tasks tab — not per-campaign. Manager+ can rename, reorder, recolor, and set a WIP limit per column from `/settings/board`. Each column still maps to one underlying `TaskStatus` so `Task.status` (and everything computed from it — dashboard, reports) never drifts from what the board shows.
+- **Swimlanes**: optional client-side grouping of the board by assignee, priority, or campaign (`?groupBy=`), purely presentational.
+- **Cards**: color labels (fixed 6-color palette), a checklist (`TaskChecklistItem`) with a progress badge, and an attachment-count indicator.
 
 **Acceptance criteria**
-- [ ] Drag-and-drop between kanban columns updates status and logs activity.
-- [ ] Assigning a task creates a `Notification` for the assignee.
+- [ ] Drag-and-drop between kanban columns updates the task's column and status, and logs activity.
+- [ ] A column at its WIP limit shows a visual warning; the limit is advisory and never blocks a drop.
+- [ ] Assigning a task creates a `Notification` for the assignee (and an email per D10).
 - [ ] Overdue tasks are visually flagged.
 - [ ] Attachment upload goes to Supabase Storage and creates an `Asset` row linked to the task.
 
@@ -479,7 +483,7 @@ Three canned reports, each with an on-screen view + **Export CSV**:
 
 - **Activity log**: every create/update/status-change/mutation logs via `logActivity()`. Powers Dashboard Recent Activity, Campaign Timeline, and the audit trail.
 - **Comments**: polymorphic on Campaign, Task, Lead. `@mention` (simple `@name` autocomplete) creates a Notification.
-- **Notifications**: in-app bell with unread count; mark-as-read; types: task_assigned, mention, campaign_status.
+- **Notifications**: in-app bell with unread count; mark-as-read; types: task_assigned, mention, campaign_status. Every notification also emails the recipient (D10) unless they've opted out in Settings.
 - **Global search (Cmd+K)**: searches campaigns, tasks, leads, knowledge by name/title; navigates on select.
 - **Dark mode**: system default + manual toggle, persisted.
 
@@ -589,8 +593,12 @@ Import the GitHub repo into Vercel. Set variables per scope:
 | `NEXT_PUBLIC_SUPABASE_ANON_KEY` | all | per environment's project |
 | `SUPABASE_SERVICE_ROLE_KEY` | all — **server-only** | never prefix with `NEXT_PUBLIC`, never import in client components |
 | `APP_BASE_URL` | all | used in invite links |
+| `RESEND_API_KEY` | all | notification emails (D10); if unset, emails are silently skipped and the app still works in-app-only |
+| `EMAIL_FROM` | all | verified sender address/domain in Resend |
 
 Preview scope points at **dev** Supabase; Production scope points at **prod** Supabase. Turn on **Vercel Deployment Protection** for previews (this is an internal tool).
+
+**Google Sign-In setup (manual, dashboard-only — not part of the codebase):** enable the Google provider under Supabase → Authentication → Providers with a Google Cloud OAuth client, and add `${SUPABASE_URL}/auth/v1/callback` as an authorized redirect URI in Google Cloud Console. Also enable "link accounts with the same email" in Supabase's auth settings — without it, an already-invited user who signs in with Google gets a distinct auth identity from their password account and the app will ask them to fall back to their password (see `account_not_linked` on the login page) rather than silently duplicating their account.
 
 Prisma datasource must declare both URLs:
 

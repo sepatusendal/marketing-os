@@ -91,6 +91,7 @@ enum EntityType {
   ASSET
   KNOWLEDGE
   USER
+  BOARD_COLUMN
 }
 
 model User {
@@ -102,6 +103,8 @@ model User {
   avatarUrl  String?
   isActive   Boolean  @default(true)
   createdAt  DateTime @default(now())
+
+  emailNotifications Boolean @default(true)
 
   campaignsOwned Campaign[]
   tasksAssigned  Task[]
@@ -151,10 +154,42 @@ model Task {
   dueDate     DateTime?
   priority    Priority   @default(MEDIUM)
   status      TaskStatus @default(TODO)
+  columnId    String?
+  column      BoardColumn? @relation(fields: [columnId], references: [id])
+  labels      String[]   @default([]) // fixed palette tags, e.g. "red", "blue"
   createdAt   DateTime   @default(now())
   updatedAt   DateTime   @updatedAt
 
-  assets Asset[] // attachments
+  assets         Asset[] // attachments
+  checklistItems TaskChecklistItem[]
+}
+
+// Shared, workspace-wide column set reused by the global /tasks board and
+// every campaign's task tab (not per-campaign boards). `status` keeps
+// task.status as the reporting source of truth for dashboard/reports;
+// name/color/position/wipLimit are purely presentational customization.
+model BoardColumn {
+  id       String     @id @default(cuid())
+  status   TaskStatus
+  name     String
+  color    String?
+  position Int
+  wipLimit Int?
+
+  tasks Task[]
+
+  @@unique([position])
+}
+
+model TaskChecklistItem {
+  id       String  @id @default(cuid())
+  taskId   String
+  task     Task    @relation(fields: [taskId], references: [id], onDelete: Cascade)
+  label    String
+  isDone   Boolean @default(false)
+  position Int
+
+  @@index([taskId])
 }
 
 model Lead {

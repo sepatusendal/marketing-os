@@ -20,6 +20,13 @@ export async function updateProfileNameAction(name: string): Promise<ActionState
   return { success: true };
 }
 
+export async function updateEmailNotificationsAction(enabled: boolean): Promise<ActionState> {
+  const user = await requireUser();
+  await prisma.user.update({ where: { id: user.id }, data: { emailNotifications: enabled } });
+  revalidatePath("/settings");
+  return { success: true };
+}
+
 export async function inviteUserAction(email: string): Promise<ActionState> {
   const user = await requireUser();
   if (!authorize(user, "user:manage")) {

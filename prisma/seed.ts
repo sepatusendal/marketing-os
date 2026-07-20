@@ -165,6 +165,13 @@ async function main() {
 
   // ---- Tasks: ~15, spread across statuses/assignees ----
   const taskStatuses = ["TODO", "IN_PROGRESS", "REVIEW", "COMPLETED"] as const;
+  // Fixed ids seeded by the board_columns_checklist_labels migration.
+  const columnIdByStatus: Record<(typeof taskStatuses)[number], string> = {
+    TODO: "col_todo",
+    IN_PROGRESS: "col_in_progress",
+    REVIEW: "col_review",
+    COMPLETED: "col_completed",
+  };
   const taskTitles = [
     "Draft landing page copy",
     "Design Instagram carousel set",
@@ -193,6 +200,7 @@ async function main() {
         campaignId: campaign.id,
         assigneeId: assignee.id,
         status,
+        columnId: columnIdByStatus[status],
         priority: (["LOW", "MEDIUM", "HIGH", "URGENT"] as const)[i % 4],
         dueDate: new Date(Date.now() + (i - 5) * 3 * 24 * 60 * 60 * 1000),
       },

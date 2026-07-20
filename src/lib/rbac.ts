@@ -18,6 +18,7 @@ export type Action =
   | "campaign:archive"
   | "task:create"
   | "task:update_status_self"
+  | "board:manage_columns"
   | "lead:crud"
   | "lead:view"
   | "expense:edit"
@@ -59,6 +60,7 @@ const MATRIX: Record<Action, Role[]> = {
     FINANCE,
     DESIGNER,
   ],
+  "board:manage_columns": [OWNER, ADMIN, MANAGER],
   "lead:crud": [OWNER, ADMIN, MANAGER, CRM],
   "lead:view": [OWNER, ADMIN, MANAGER, MARKETING, CRM, VIEWER],
   "expense:edit": [OWNER, ADMIN, MANAGER, FINANCE],
