@@ -8,6 +8,10 @@ import { listActiveUsers } from "@/server/user.service";
 import { LeadPipelineBoard } from "@/components/modules/leads/lead-pipeline-board";
 import { LeadTable } from "@/components/modules/leads/lead-table";
 import { LeadFilters } from "@/components/modules/leads/lead-filters";
+import { LeadImportDialog } from "@/components/modules/leads/lead-import-dialog";
+import { buttonVariants } from "@/components/ui/button";
+import { cn } from "@/lib/utils";
+import { Download } from "lucide-react";
 
 export default async function LeadsPage({
   searchParams,
@@ -48,16 +52,30 @@ export default async function LeadsPage({
     potentialRevenue: l.potentialRevenue?.toString() ?? null,
   }));
 
+  const exportQuery = new URLSearchParams(
+    Object.fromEntries(Object.entries(leadFilters).filter(([, v]) => v)) as Record<string, string>,
+  ).toString();
+
   return (
     <div className="space-y-4">
-      <div className="flex items-center justify-between">
+      <div className="flex flex-wrap items-center justify-between gap-2">
         <div>
           <h1 className="text-2xl font-semibold">Leads</h1>
           <p className="text-muted-foreground">Pipeline for every incoming lead.</p>
         </div>
-        <Link href="/leads/clients" className="text-sm text-muted-foreground hover:underline">
-          View clients →
-        </Link>
+        <div className="flex items-center gap-3">
+          {canEdit && <LeadImportDialog />}
+          <a
+            href={`/api/leads/export?${exportQuery}`}
+            className={cn(buttonVariants({ variant: "outline", size: "sm" }))}
+          >
+            <Download className="mr-1 h-4 w-4" />
+            Export CSV
+          </a>
+          <Link href="/leads/clients" className="text-sm text-muted-foreground hover:underline">
+            View clients →
+          </Link>
+        </div>
       </div>
 
       <LeadFilters view={view} />

@@ -15,8 +15,8 @@ export type CampaignListFilters = {
   assignedTaskUserId?: string;
 };
 
-export async function listCampaigns(filters: CampaignListFilters = {}) {
-  const where: Prisma.CampaignWhereInput = {
+function campaignWhere(filters: CampaignListFilters): Prisma.CampaignWhereInput {
+  return {
     ...(filters.status ? { status: filters.status } : {}),
     ...(filters.department ? { department: filters.department } : {}),
     ...(filters.ownerId ? { ownerId: filters.ownerId } : {}),
@@ -27,9 +27,11 @@ export async function listCampaigns(filters: CampaignListFilters = {}) {
       ? { tasks: { some: { assigneeId: filters.assignedTaskUserId } } }
       : {}),
   };
+}
 
+export async function listCampaigns(filters: CampaignListFilters = {}) {
   const rows = await prisma.campaign.findMany({
-    where,
+    where: campaignWhere(filters),
     include: { owner: true },
     orderBy: { createdAt: "desc" },
     take: PAGE_SIZE + 1,
@@ -47,6 +49,21 @@ export async function listCampaigns(filters: CampaignListFilters = {}) {
     })),
     nextCursor: hasMore ? items[items.length - 1].id : null,
   };
+}
+
+/** Unbounded — used for CSV export, which needs every matching row, not a page. */
+export async function listCampaignsForExport(filters: CampaignListFilters = {}) {
+  const rows = await prisma.campaign.findMany({
+    where: campaignWhere(filters),
+    include: { owner: true },
+    orderBy: { createdAt: "desc" },
+  });
+  const budgetUsedByCampaign = await getBudgetUsedMap(rows.map((c) => c.id));
+
+  return rows.map((c) => ({
+    ...c,
+    budgetUsed: budgetUsedByCampaign[c.id] ?? 0,
+  }));
 }
 
 export async function getCampaign(id: string) {

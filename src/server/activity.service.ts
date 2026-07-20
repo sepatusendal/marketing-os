@@ -29,6 +29,14 @@ export async function listActivityForEntity(entityType: EntityType, entityId: st
  * its children (tasks, expenses) — ActivityLog has no campaignId column,
  * so child entries are pulled by first collecting task/expense ids.
  */
+export async function listLeadTimeline(leadId: string) {
+  return prisma.activityLog.findMany({
+    where: { entityType: "LEAD", entityId: leadId },
+    include: { actor: true },
+    orderBy: { createdAt: "desc" },
+  });
+}
+
 export async function listCampaignTimeline(campaignId: string) {
   const [tasks, expenses] = await Promise.all([
     prisma.task.findMany({ where: { campaignId }, select: { id: true } }),

@@ -11,9 +11,12 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
+import { ArrowUpDown } from "lucide-react";
 import { formatDate, formatIDR } from "@/lib/format";
 import { EmptyIllustration } from "@/components/ui/empty-illustration";
 import { getLeadStaleness } from "@/lib/lead-followup";
+import { computeLeadScore } from "@/lib/lead-score";
+import { LeadScoreBadge } from "./lead-score-badge";
 import { cn } from "@/lib/utils";
 import { LeadDrawer } from "./lead-drawer";
 import type { LeadWithRelations } from "./lead-card";
@@ -31,6 +34,17 @@ export function LeadTable({
 }) {
   const [selectedLead, setSelectedLead] = useState<LeadWithRelations | null>(null);
   const [drawerOpen, setDrawerOpen] = useState(false);
+  const [sortByScore, setSortByScore] = useState(false);
+
+  const scored = leads.map((lead) => ({
+    lead,
+    score: computeLeadScore({
+      source: lead.source,
+      status: lead.status,
+      potentialRevenue: lead.potentialRevenue != null ? Number(lead.potentialRevenue) : null,
+    }),
+  }));
+  const rows = sortByScore ? [...scored].sort((a, b) => b.score - a.score) : scored;
 
   return (
     <div className="space-y-4">
@@ -65,10 +79,20 @@ export function LeadTable({
             <TableHead>Owner</TableHead>
             <TableHead>Last contact</TableHead>
             <TableHead className="text-right">Potential revenue</TableHead>
+            <TableHead className="text-right">
+              <button
+                type="button"
+                onClick={() => setSortByScore((v) => !v)}
+                className="inline-flex items-center gap-1 hover:text-foreground"
+              >
+                Score
+                <ArrowUpDown className="h-3 w-3" />
+              </button>
+            </TableHead>
           </TableRow>
         </TableHeader>
         <TableBody>
-          {leads.map((lead) => {
+          {rows.map(({ lead, score }) => {
             const staleness = getLeadStaleness(lead);
             return (
             <TableRow
@@ -105,6 +129,9 @@ export function LeadTable({
               </TableCell>
               <TableCell className="text-right">
                 {lead.potentialRevenue != null ? formatIDR(lead.potentialRevenue.toString()) : "—"}
+              </TableCell>
+              <TableCell className="text-right">
+                <LeadScoreBadge score={score} className="ml-auto" />
               </TableCell>
             </TableRow>
             );
