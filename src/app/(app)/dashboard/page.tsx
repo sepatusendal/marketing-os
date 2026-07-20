@@ -1,6 +1,7 @@
 import { getCurrentUser } from "@/lib/auth";
 import { formatIDR } from "@/lib/format";
 import { CountUp } from "@/components/ui/count-up";
+import { DashboardHeroIllustration } from "@/components/modules/dashboard/hero-illustration";
 import type { BudgetPeriod } from "@/server/dashboard.service";
 import {
   getActiveCampaigns,
@@ -98,7 +99,8 @@ export default async function DashboardPage({
 
   return (
     <div className="space-y-6">
-      <div className="flex flex-col gap-1">
+      <div className="relative flex flex-col gap-1">
+        <DashboardHeroIllustration />
         <p className="text-sm font-medium text-muted-foreground">{jakartaDateLabel()}</p>
         <h1 className="font-heading text-3xl font-semibold tracking-tight">
           {jakartaGreeting()}, {firstName}
