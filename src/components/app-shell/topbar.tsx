@@ -49,6 +49,9 @@ export function Topbar({
             MarketingOS
           </div>
           <SidebarNav />
+          <div className="border-t border-sidebar-border px-3 py-3 text-center text-xs text-sidebar-foreground/40">
+            Built with care by Nufa Global
+          </div>
         </SheetContent>
       </Sheet>
 

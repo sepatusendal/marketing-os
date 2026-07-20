@@ -154,4 +154,24 @@
   table {
     font-variant-numeric: tabular-nums;
   }
+  /* Tailwind's preflight resets <button> to cursor:default. Every button in
+     this app is clickable, so restore the pointer cursor everywhere instead
+     of patching it one component at a time. */
+  button:not(:disabled),
+  [role="button"]:not([aria-disabled="true"]),
+  [role="tab"],
+  [role="menuitem"],
+  [role="option"],
+  summary {
+    cursor: pointer;
+  }
+}
+
+@keyframes bell-ring {
+  0%, 100% { transform: rotate(0deg); }
+  15% { transform: rotate(14deg); }
+  30% { transform: rotate(-12deg); }
+  45% { transform: rotate(9deg); }
+  60% { transform: rotate(-6deg); }
+  75% { transform: rotate(3deg); }
 }

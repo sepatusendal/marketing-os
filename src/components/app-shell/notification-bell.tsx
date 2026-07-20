@@ -51,12 +51,17 @@ export function NotificationBell({
     <DropdownMenu open={open} onOpenChange={setOpen}>
       <DropdownMenuTrigger
         render={
-          <Button variant="ghost" size="icon" className="relative" aria-label="Notifications">
-            <Bell className="h-4 w-4" />
+          <Button
+            variant="ghost"
+            size="icon"
+            className="group relative"
+            aria-label="Notifications"
+          >
+            <Bell className="h-4 w-4 origin-top transition-transform group-hover:animate-[bell-ring_0.6s_ease-in-out]" />
             {unreadCount > 0 && (
               <Badge
                 variant="destructive"
-                className="absolute -right-1 -top-1 h-4 min-w-4 justify-center rounded-full px-1 text-[10px]"
+                className="absolute -right-1 -top-1 h-4 min-w-4 justify-center rounded-full px-1 text-[10px] transition-transform group-hover:scale-110"
               >
                 {unreadCount > 9 ? "9+" : unreadCount}
               </Badge>

@@ -90,6 +90,19 @@ export function AppSidebar() {
           );
         })}
       </nav>
+
+      <div
+        className={cn(
+          "border-t border-sidebar-border py-3 text-center text-xs text-sidebar-foreground/40",
+          collapsed ? "px-1" : "px-3",
+        )}
+      >
+        {collapsed ? (
+          <span title="Built with care by Nufa Global">♥</span>
+        ) : (
+          <span>Built with care by Nufa Global</span>
+        )}
+      </div>
     </aside>
   );
 }
