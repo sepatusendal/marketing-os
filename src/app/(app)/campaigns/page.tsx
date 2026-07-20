@@ -21,6 +21,7 @@ import { Role, type CampaignStatus } from "@prisma/client";
 import { buttonVariants } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import { Download } from "lucide-react";
+import { SavedViewsBar } from "@/components/ui/saved-views-bar";
 
 export default async function CampaignsPage({
   searchParams,
@@ -75,6 +76,16 @@ export default async function CampaignsPage({
       </div>
 
       <CampaignFilters departments={departments} owners={users} />
+      <SavedViewsBar
+        entityType="CAMPAIGN"
+        basePath="/campaigns"
+        currentFilters={{
+          status: params.status,
+          department: params.department,
+          ownerId: params.ownerId,
+          search: params.search,
+        }}
+      />
 
       {campaigns.length === 0 ? (
         <div className="flex flex-col items-center gap-3 rounded-lg border border-dashed p-12 text-center text-muted-foreground">

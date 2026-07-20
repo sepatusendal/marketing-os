@@ -112,6 +112,7 @@ model User {
   activities     ActivityLog[]
   knowledge      KnowledgeArticle[]
   notifications  Notification[]
+  savedViews     SavedView[]
 }
 
 model Campaign {
@@ -269,4 +270,16 @@ model Notification {
   createdAt  DateTime    @default(now())
 
   @@index([userId, readAt])
+}
+
+model SavedView {
+  id         String   @id @default(cuid())
+  userId     String   @db.Uuid
+  user       User     @relation(fields: [userId], references: [id])
+  entityType String // "LEAD" | "CAMPAIGN"
+  name       String
+  filters    Json // arbitrary URLSearchParams-shaped filter object
+  createdAt  DateTime @default(now())
+
+  @@index([userId, entityType])
 }

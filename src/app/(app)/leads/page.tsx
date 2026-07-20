@@ -9,6 +9,7 @@ import { LeadPipelineBoard } from "@/components/modules/leads/lead-pipeline-boar
 import { LeadTable } from "@/components/modules/leads/lead-table";
 import { LeadFilters } from "@/components/modules/leads/lead-filters";
 import { LeadImportDialog } from "@/components/modules/leads/lead-import-dialog";
+import { SavedViewsBar } from "@/components/ui/saved-views-bar";
 import { buttonVariants } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import { Download } from "lucide-react";
@@ -79,6 +80,11 @@ export default async function LeadsPage({
       </div>
 
       <LeadFilters view={view} />
+      <SavedViewsBar
+        entityType="LEAD"
+        basePath="/leads"
+        currentFilters={{ status: params.status, source: params.source, search: params.search, view: params.view }}
+      />
 
       {view === "board" ? (
         <LeadPipelineBoard
