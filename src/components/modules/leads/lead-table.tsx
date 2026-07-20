@@ -12,6 +12,9 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { formatDate, formatIDR } from "@/lib/format";
+import { EmptyIllustration } from "@/components/ui/empty-illustration";
+import { getLeadStaleness } from "@/lib/lead-followup";
+import { cn } from "@/lib/utils";
 import { LeadDrawer } from "./lead-drawer";
 import type { LeadWithRelations } from "./lead-card";
 
@@ -47,7 +50,10 @@ export function LeadTable({
       )}
 
       {leads.length === 0 ? (
-        <p className="text-sm text-muted-foreground">No leads match these filters.</p>
+        <div className="flex flex-col items-center gap-3 rounded-lg border border-dashed p-12 text-center text-muted-foreground">
+          <EmptyIllustration className="h-24 w-32" />
+          <p>No leads match these filters.</p>
+        </div>
       ) : (
       <Table>
         <TableHeader>
@@ -62,16 +68,34 @@ export function LeadTable({
           </TableRow>
         </TableHeader>
         <TableBody>
-          {leads.map((lead) => (
+          {leads.map((lead) => {
+            const staleness = getLeadStaleness(lead);
+            return (
             <TableRow
               key={lead.id}
-              className="cursor-pointer"
+              className={cn(
+                "cursor-pointer",
+                staleness === "overdue" && "bg-destructive/5",
+              )}
               onClick={() => {
                 setSelectedLead(lead);
                 setDrawerOpen(true);
               }}
             >
-              <TableCell className="font-medium">{lead.name}</TableCell>
+              <TableCell className="font-medium">
+                <div className="flex items-center gap-2">
+                  {staleness !== "none" && staleness !== "fresh" && (
+                    <span
+                      title={staleness === "overdue" ? "Overdue for follow-up" : "Follow-up due soon"}
+                      className={cn(
+                        "h-1.5 w-1.5 shrink-0 rounded-full",
+                        staleness === "overdue" ? "bg-destructive" : "bg-amber-500",
+                      )}
+                    />
+                  )}
+                  {lead.name}
+                </div>
+              </TableCell>
               <TableCell>{lead.company ?? "—"}</TableCell>
               <TableCell>{lead.status}</TableCell>
               <TableCell>{lead.source}</TableCell>
@@ -83,7 +107,8 @@ export function LeadTable({
                 {lead.potentialRevenue != null ? formatIDR(lead.potentialRevenue.toString()) : "—"}
               </TableCell>
             </TableRow>
-          ))}
+            );
+          })}
         </TableBody>
       </Table>
       )}

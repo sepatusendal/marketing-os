@@ -8,6 +8,7 @@ export const createLeadSchema = z.object({
   name: z.string().min(1, "Name is required").max(200),
   company: z.string().max(200).optional().or(z.literal("")),
   industry: z.string().max(100).optional().or(z.literal("")),
+  phone: z.string().max(30).optional().or(z.literal("")),
   source: z.enum(sourceValues).default("OTHER"),
   ownerId: z.string().uuid().optional().or(z.literal("")),
   campaignId: z.string().optional().or(z.literal("")),

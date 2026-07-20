@@ -16,6 +16,7 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
+import { EmptyIllustration } from "@/components/ui/empty-illustration";
 import { Role, type CampaignStatus } from "@prisma/client";
 
 export default async function CampaignsPage({
@@ -53,9 +54,12 @@ export default async function CampaignsPage({
       <CampaignFilters departments={departments} owners={users} />
 
       {campaigns.length === 0 ? (
-        <div className="rounded-lg border border-dashed p-12 text-center text-muted-foreground">
-          No campaigns match these filters yet.
-          {canCreate && " Create one to get started."}
+        <div className="flex flex-col items-center gap-3 rounded-lg border border-dashed p-12 text-center text-muted-foreground">
+          <EmptyIllustration className="h-24 w-32" />
+          <p>
+            No campaigns match these filters yet.
+            {canCreate && " Create one to get started."}
+          </p>
         </div>
       ) : (
         <div className="rounded-lg border">

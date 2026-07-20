@@ -7,6 +7,7 @@ import {
   endOfDay,
 } from "date-fns";
 import type { CampaignStatus, LeadStatus } from "@prisma/client";
+import { FOLLOWUP_SLA_HOURS } from "@/lib/lead-followup";
 
 export async function getActiveCampaigns() {
   return prisma.campaign.findMany({
@@ -87,6 +88,24 @@ export async function getLeadSummary() {
     byStatus: order.map((status) => ({ status, count: counts[status] ?? 0 })),
     newLast7Days,
   };
+}
+
+/** Active leads not contacted within the follow-up SLA window (48h) — see lib/lead-followup.ts. */
+export async function getLeadsNeedingFollowup() {
+  const slaThreshold = new Date(Date.now() - FOLLOWUP_SLA_HOURS * 60 * 60 * 1000);
+
+  return prisma.lead.findMany({
+    where: {
+      status: { notIn: ["WON", "LOST"] },
+      OR: [
+        { lastContactAt: { lt: slaThreshold } },
+        { lastContactAt: null, createdAt: { lt: slaThreshold } },
+      ],
+    },
+    include: { owner: true, campaign: { select: { id: true, name: true } } },
+    orderBy: { lastContactAt: "asc" },
+    take: 10,
+  });
 }
 
 export async function getRecentActivity(limit = 20) {
