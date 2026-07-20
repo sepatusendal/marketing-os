@@ -1,5 +1,8 @@
+import Link from "next/link";
+import { PieChart } from "lucide-react";
 import { WidgetCard } from "./widget-card";
-import { CampaignStatusBadge } from "@/components/modules/campaigns/status-badge";
+import { HorizontalBarChart } from "@/components/ui/charts/horizontal-bar-chart";
+import { WIDGET_ACCENT, CAMPAIGN_STATUS_BAR } from "@/lib/accent-colors";
 import type { CampaignStatus } from "@prisma/client";
 
 export function CampaignsByStatusWidget({
@@ -10,18 +13,32 @@ export function CampaignsByStatusWidget({
   const total = data.reduce((sum, d) => sum + d.count, 0);
 
   return (
-    <WidgetCard title="Campaigns by Status">
+    <WidgetCard
+      title="Campaign Status"
+      accent={WIDGET_ACCENT.campaignsByStatus}
+      icon={PieChart}
+      action={
+        <Link href="/campaigns" className="text-xs text-muted-foreground hover:text-foreground hover:underline">
+          View all
+        </Link>
+      }
+    >
       {total === 0 ? (
         <p className="text-sm text-muted-foreground">No campaigns yet.</p>
       ) : (
-        <ul className="space-y-2">
-          {data.map((d) => (
-            <li key={d.status} className="flex items-center justify-between text-sm">
-              <CampaignStatusBadge status={d.status} />
-              <span className="text-muted-foreground">{d.count}</span>
-            </li>
-          ))}
-        </ul>
+        <HorizontalBarChart
+          data={data.map((d) => {
+            const pct = Math.round((d.count / total) * 100);
+            return {
+              key: d.status,
+              label: d.status,
+              value: d.count,
+              valueLabel: `${d.count} · ${pct}%`,
+              colorClass: CAMPAIGN_STATUS_BAR[d.status],
+              detail: `${pct}% of ${total} campaign${total === 1 ? "" : "s"}`,
+            };
+          })}
+        />
       )}
     </WidgetCard>
   );
