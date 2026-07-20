@@ -17,13 +17,21 @@ Next.js (App Router) · TypeScript · Tailwind + shadcn/ui · Prisma · Supabase
 
 ## Process
 Build one phase at a time per PRD §11. Finish the phase's Definition of Done before moving on.
-**MVP complete + UI/UX revamp + Lead Follow-up SLA + advanced features (1/2) done** (v1.4) — Phase 0
-through Phase 8 done and verified end-to-end, a full design-system revamp, a Lead Follow-up SLA system,
-and (from a HubSpot-inspired brainstorm) lead scoring, per-lead activity timeline, full JSON backup
-export, entity-level CSV export, and bulk lead CSV import. Saved views/segments and light automation
-rules are next (part 2 of the same brainstorm). Remaining before a real launch: the go-live checklist
-in PRD §12.9 (production Supabase project, Vercel deployment + Deployment Protection, custom domain) —
-infrastructure decisions intentionally left for explicit user action, not automated.
+**MVP complete + UI/UX revamp + Lead Follow-up SLA + HubSpot-inspired advanced features done** (v1.5) —
+Phase 0 through Phase 8 done and verified end-to-end, a full design-system revamp, a Lead Follow-up SLA
+system, and a full round of HubSpot-inspired features: lead scoring, per-lead activity timeline, full
+JSON backup export, entity-level CSV export, bulk lead CSV import, saved views/segments, and two light
+automations (lead-won onboarding task, campaign budget threshold alert). Remaining before a real launch:
+the go-live checklist in PRD §12.9 (production Supabase project, Vercel deployment + Deployment
+Protection, custom domain) — infrastructure decisions intentionally left for explicit user action, not
+automated.
+
+## Automations
+Two hardcoded automations, not a general rule engine: (1) a lead moving to WON auto-creates a
+HIGH-priority onboarding task for its owner (`leads/actions.ts`); (2) a campaign crossing 90% budget
+usage notifies its owner, detected via before/after percentage comparison so it fires once per crossing
+(`budget/actions.ts`). Add new automations the same way — inline in the relevant action, not as a
+separate engine — unless the list grows enough to justify one.
 
 ## Lead follow-up SLA
 `src/lib/lead-followup.ts` is the single source of truth for the 48h staleness threshold — used by the
