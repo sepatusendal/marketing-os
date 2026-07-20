@@ -12,8 +12,11 @@ import {
   SheetHeader,
   SheetTitle,
 } from "@/components/ui/sheet";
-import { Button } from "@/components/ui/button";
+import { Button, buttonVariants } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { cn } from "@/lib/utils";
+import { whatsappLink } from "@/lib/whatsapp";
+import { MessageCircle } from "lucide-react";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import {
@@ -147,6 +150,17 @@ export function LeadDrawer({
                 </div>
               </div>
 
+              <div className="space-y-2">
+                <Label htmlFor="phone">Phone (WhatsApp)</Label>
+                <Input
+                  id="phone"
+                  name="phone"
+                  type="tel"
+                  placeholder="+62812..."
+                  defaultValue={lead?.phone ?? ""}
+                />
+              </div>
+
               <div className="grid grid-cols-2 gap-4">
                 <div className="space-y-2">
                   <Label htmlFor="source">Source</Label>
@@ -259,6 +273,23 @@ export function LeadDrawer({
 
               {canEdit && (
                 <div className="flex flex-wrap gap-2">
+                  {lead.phone && (
+                    <a
+                      href={whatsappLink(
+                        lead.phone,
+                        `Hi ${lead.name}, following up on your inquiry`,
+                      )}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className={cn(
+                        buttonVariants({ variant: "outline", size: "sm" }),
+                        "border-emerald-500/30 text-emerald-600 hover:bg-emerald-500/10 hover:text-emerald-600 dark:text-emerald-400",
+                      )}
+                    >
+                      <MessageCircle className="mr-1 h-3.5 w-3.5" />
+                      WhatsApp
+                    </a>
+                  )}
                   <Button variant="outline" size="sm" onClick={handleTouchLastContact}>
                     Mark contacted now
                   </Button>

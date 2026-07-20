@@ -6,6 +6,7 @@ import { listKnowledge, listAllTags } from "@/server/knowledge.service";
 import { KnowledgeFilters } from "@/components/modules/knowledge/knowledge-filters";
 import { buttonVariants } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
+import { EmptyIllustration } from "@/components/ui/empty-illustration";
 import { cn } from "@/lib/utils";
 import { formatDate } from "@/lib/format";
 import { Plus } from "lucide-react";
@@ -47,7 +48,10 @@ export default async function KnowledgePage({
       <KnowledgeFilters tags={tags} />
 
       {articles.length === 0 ? (
-        <p className="text-sm text-muted-foreground">No articles match these filters.</p>
+        <div className="flex flex-col items-center gap-3 rounded-lg border border-dashed p-12 text-center text-muted-foreground">
+          <EmptyIllustration className="h-24 w-32" />
+          <p>No articles match these filters.</p>
+        </div>
       ) : (
         <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3">
           {articles.map((a) => (

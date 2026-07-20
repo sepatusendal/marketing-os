@@ -161,6 +161,7 @@ model Lead {
   name             String
   company          String?
   industry         String?
+  phone            String?
   source           LeadSource @default(OTHER)
   status           LeadStatus @default(NEW)
   ownerId          String?    @db.Uuid

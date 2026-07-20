@@ -4,6 +4,7 @@ import { listNotifications, countUnreadNotifications } from "@/server/notificati
 import { AppSidebar } from "@/components/app-shell/app-sidebar";
 import { Topbar } from "@/components/app-shell/topbar";
 import { CommandPalette } from "@/components/app-shell/command-palette";
+import { FollowupChecker } from "@/components/app-shell/followup-checker";
 
 export default async function AppLayout({
   children,
@@ -24,6 +25,7 @@ export default async function AppLayout({
   return (
     <div className="flex min-h-screen">
       <CommandPalette />
+      <FollowupChecker />
       <AppSidebar />
 
       <div className="flex min-w-0 flex-1 flex-col">

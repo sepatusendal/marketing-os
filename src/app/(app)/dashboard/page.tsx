@@ -1,5 +1,6 @@
 import { getCurrentUser } from "@/lib/auth";
 import { formatIDR } from "@/lib/format";
+import { CountUp } from "@/components/ui/count-up";
 import type { BudgetPeriod } from "@/server/dashboard.service";
 import {
   getActiveCampaigns,
@@ -9,6 +10,7 @@ import {
   getLeadSummary,
   getRecentActivity,
   getCalendarEvents,
+  getLeadsNeedingFollowup,
 } from "@/server/dashboard.service";
 import { listNotifications } from "@/server/notification.service";
 import { ActiveCampaignsWidget } from "@/components/modules/dashboard/active-campaigns-widget";
@@ -19,6 +21,7 @@ import { LeadSummaryWidget } from "@/components/modules/dashboard/lead-summary-w
 import { RecentActivityWidget } from "@/components/modules/dashboard/recent-activity-widget";
 import { MiniCalendarWidget } from "@/components/modules/dashboard/mini-calendar-widget";
 import { NotificationsWidget } from "@/components/modules/dashboard/notifications-widget";
+import { FollowupWidget } from "@/components/modules/dashboard/followup-widget";
 
 function jakartaGreeting() {
   const hour = Number(
@@ -62,6 +65,7 @@ export default async function DashboardPage({
     recentActivity,
     calendarEvents,
     notifications,
+    followupLeads,
   ] = await Promise.all([
     getActiveCampaigns(),
     getCampaignsByStatus(),
@@ -71,11 +75,11 @@ export default async function DashboardPage({
     getRecentActivity(),
     getCalendarEvents(new Date()),
     listNotifications(user.id),
+    getLeadsNeedingFollowup(),
   ]);
 
   const firstName = user.name.split(" ")[0];
   const overdueOrDueToday = todaysTasks.length;
-  const staleLeads = leadSummary.byStatus.find((s) => s.status === "NEW")?.count ?? 0;
 
   const briefingParts: string[] = [];
   briefingParts.push(
@@ -86,8 +90,10 @@ export default async function DashboardPage({
   if (overdueOrDueToday > 0) {
     briefingParts.push(`${overdueOrDueToday} task${overdueOrDueToday === 1 ? "" : "s"} on your plate today`);
   }
-  if (staleLeads > 0) {
-    briefingParts.push(`${staleLeads} new lead${staleLeads === 1 ? "" : "s"} waiting on a first touch`);
+  if (followupLeads.length > 0) {
+    briefingParts.push(
+      `${followupLeads.length} lead${followupLeads.length === 1 ? "" : "s"} overdue for follow-up`,
+    );
   }
 
   return (
@@ -104,22 +110,22 @@ export default async function DashboardPage({
       </div>
 
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
-        <div className="rounded-xl border bg-card p-4">
+        <div className="rounded-xl border bg-card p-4 transition-shadow hover:shadow-md">
           <p className="text-sm text-muted-foreground">Active campaigns</p>
-          <p className="mt-1 font-heading text-2xl font-semibold tabular-nums">
-            {activeCampaigns.length}
+          <p className="mt-1 font-heading text-2xl font-semibold">
+            <CountUp value={activeCampaigns.length} />
           </p>
         </div>
-        <div className="rounded-xl border bg-card p-4">
+        <div className="rounded-xl border bg-card p-4 transition-shadow hover:shadow-md">
           <p className="text-sm text-muted-foreground">Due today</p>
-          <p className="mt-1 font-heading text-2xl font-semibold tabular-nums">
-            {todaysTasks.length}
+          <p className="mt-1 font-heading text-2xl font-semibold">
+            <CountUp value={todaysTasks.length} />
           </p>
         </div>
-        <div className="rounded-xl border bg-card p-4">
+        <div className="rounded-xl border bg-card p-4 transition-shadow hover:shadow-md">
           <p className="text-sm text-muted-foreground">Budget used</p>
-          <p className="mt-1 font-heading text-2xl font-semibold tabular-nums">
-            {budgetUsage.percentUsed}%
+          <p className="mt-1 font-heading text-2xl font-semibold">
+            <CountUp value={budgetUsage.percentUsed} suffix="%" />
             <span className="ml-1.5 text-sm font-normal text-muted-foreground">
               of {formatIDR(budgetUsage.allocated)}
             </span>
@@ -127,11 +133,24 @@ export default async function DashboardPage({
         </div>
       </div>
 
+      {followupLeads.length > 0 && (
+        <div className="rounded-xl border border-destructive/30 bg-destructive/5 p-4">
+          <p className="text-sm font-medium text-destructive">
+            {followupLeads.length} lead{followupLeads.length === 1 ? "" : "s"} need
+            {followupLeads.length === 1 ? "s" : ""} follow-up now
+          </p>
+          <p className="mt-0.5 text-sm text-muted-foreground">
+            No contact in 48+ hours — see the list below before they go cold.
+          </p>
+        </div>
+      )}
+
       <div className="grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-3">
         <ActiveCampaignsWidget campaigns={activeCampaigns} />
         <CampaignsByStatusWidget data={campaignsByStatus} />
         <BudgetUsageWidget usage={budgetUsage} period={budgetPeriod} />
         <TodaysTasksWidget tasks={todaysTasks} />
+        <FollowupWidget leads={followupLeads} />
         <LeadSummaryWidget summary={leadSummary} />
         <MiniCalendarWidget events={calendarEvents} />
         <NotificationsWidget notifications={notifications} />
