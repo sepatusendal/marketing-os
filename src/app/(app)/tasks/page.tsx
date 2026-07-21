@@ -2,6 +2,7 @@ import Link from "next/link";
 import { requireUser } from "@/lib/auth";
 import { Role, type TaskStatus } from "@prisma/client";
 import { listMyTasks, listAllTasks } from "@/server/task.service";
+import { listBoardColumns } from "@/server/board-column.service";
 import { listCampaignOptions } from "@/server/campaign.service";
 import { listActiveUsers } from "@/server/user.service";
 import { KanbanBoard } from "@/components/modules/tasks/kanban-board";
@@ -20,7 +21,7 @@ export default async function TasksPage({
   const canViewAll = MANAGER_ROLES.includes(user.role);
   const view = params.view === "all" && canViewAll ? "all" : "mine";
 
-  const [tasks, campaignOptions, users] = await Promise.all([
+  const [tasks, campaignOptions, users, columns] = await Promise.all([
     view === "all"
       ? listAllTasks({
           campaignId: params.campaignId,
@@ -30,6 +31,7 @@ export default async function TasksPage({
       : listMyTasks(user.id),
     listCampaignOptions(),
     listActiveUsers(),
+    listBoardColumns(),
   ]);
 
   return (
@@ -74,6 +76,7 @@ export default async function TasksPage({
 
       <KanbanBoard
         tasks={tasks}
+        columns={columns}
         showCampaign={view === "all"}
         campaignOptions={campaignOptions}
         users={users}

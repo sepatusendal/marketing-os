@@ -7,6 +7,7 @@ import { getCampaign, listCampaignOptions } from "@/server/campaign.service";
 import { listActiveUsers } from "@/server/user.service";
 import { listCampaignTimeline } from "@/server/activity.service";
 import { listTasksForCampaign } from "@/server/task.service";
+import { listBoardColumns } from "@/server/board-column.service";
 import { listExpenses, categoryBreakdown } from "@/server/expense.service";
 import { listAssetsForCampaign, getSignedDownloadUrl } from "@/server/asset.service";
 import { getAllowedTransitions } from "@/lib/campaign-status";
@@ -49,11 +50,12 @@ export default async function CampaignDetailPage({
   const campaign = await getCampaign(id);
   if (!campaign) notFound();
 
-  const [users, activity, tasks, campaignOptions, expenses, breakdown, assets, comments, articles] =
+  const [users, activity, tasks, columns, campaignOptions, expenses, breakdown, assets, comments, articles] =
     await Promise.all([
       listActiveUsers(),
       listCampaignTimeline(id),
       listTasksForCampaign(id),
+      listBoardColumns(),
       listCampaignOptions(),
       listExpenses({ campaignId: id }),
       categoryBreakdown(id),
@@ -203,6 +205,7 @@ export default async function CampaignDetailPage({
         <TabsContent value="tasks" className="pt-4">
           <KanbanBoard
             tasks={tasks}
+            columns={columns}
             showCampaign={false}
             campaignOptions={campaignOptions}
             users={users}

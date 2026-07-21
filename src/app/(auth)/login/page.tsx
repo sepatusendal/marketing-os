@@ -20,10 +20,15 @@ function LoginForm() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [loading, setLoading] = useState(false);
+  const [googleLoading, setGoogleLoading] = useState(false);
   const [error, setError] = useState<string | null>(
     searchParams.get("error") === "auth_callback_failed"
       ? "Your invite link is invalid or expired. Ask an admin to resend it."
-      : null,
+      : searchParams.get("error") === "not_invited"
+        ? "This Google account hasn't been invited to MarketingOS. Ask an admin to invite your email first."
+        : searchParams.get("error") === "account_not_linked"
+          ? "Your invited account isn't linked to Google yet. Sign in with your password instead, or ask an admin to enable account linking."
+          : null,
   );
 
   async function handleSubmit(e: React.FormEvent) {
@@ -46,6 +51,21 @@ function LoginForm() {
 
     router.push("/dashboard");
     router.refresh();
+  }
+
+  async function handleGoogleSignIn() {
+    setGoogleLoading(true);
+    setError(null);
+    const supabase = createClient();
+    const { error } = await supabase.auth.signInWithOAuth({
+      provider: "google",
+      options: { redirectTo: `${window.location.origin}/api/auth/callback` },
+    });
+    if (error) {
+      setGoogleLoading(false);
+      setError(error.message);
+    }
+    // On success, Supabase redirects the browser away — no further state update needed.
   }
 
   return (
@@ -85,6 +105,22 @@ function LoginForm() {
             {loading ? "Signing in..." : "Sign in"}
           </Button>
         </form>
+
+        <div className="my-4 flex items-center gap-2 text-xs text-muted-foreground">
+          <div className="h-px flex-1 bg-border" />
+          or
+          <div className="h-px flex-1 bg-border" />
+        </div>
+
+        <Button
+          type="button"
+          variant="outline"
+          className="w-full"
+          disabled={googleLoading}
+          onClick={handleGoogleSignIn}
+        >
+          {googleLoading ? "Redirecting..." : "Continue with Google"}
+        </Button>
       </CardContent>
     </Card>
   );

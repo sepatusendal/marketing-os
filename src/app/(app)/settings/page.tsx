@@ -8,6 +8,7 @@ export default async function SettingsPage() {
   if (!user) return null;
 
   const canManageUsers = authorize({ id: user.id, role: user.role }, "user:manage");
+  const canManageBoard = authorize({ id: user.id, role: user.role }, "board:manage_columns");
 
   return (
     <div className="space-y-4">
@@ -19,13 +20,22 @@ export default async function SettingsPage() {
               Users
             </Link>
           )}
+          {canManageBoard && (
+            <Link href="/settings/board" className="text-muted-foreground hover:underline">
+              Board
+            </Link>
+          )}
           <Link href="/settings/workspace" className="text-muted-foreground hover:underline">
             Workspace
           </Link>
         </div>
       </div>
 
-      <ProfileForm initialName={user.name} email={user.email} />
+      <ProfileForm
+        initialName={user.name}
+        email={user.email}
+        initialEmailNotifications={user.emailNotifications}
+      />
     </div>
   );
 }
