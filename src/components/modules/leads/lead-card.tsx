@@ -1,6 +1,6 @@
 "use client";
 
-import { formatIDR } from "@/lib/format";
+import { formatIDRCompact } from "@/lib/format";
 import { FOLLOWUP_SLA_HOURS, getLeadStaleness } from "@/lib/lead-followup";
 import { computeLeadScore } from "@/lib/lead-score";
 import { LeadScoreBadge } from "./lead-score-badge";
@@ -15,6 +15,13 @@ export type LeadWithRelations = Omit<Lead, "potentialRevenue"> & {
   client: Client | null;
 };
 
+/**
+ * Deliberately compact — the pipeline board shows all 6 stages side by
+ * side on one screen (no horizontal scroll), so each card only has
+ * ~150-180px on a normal desktop. Company/source text is dropped in favor
+ * of the essentials (name, score, revenue, owner) so the whole pipeline
+ * reads at a glance instead of needing to scroll for the full picture.
+ */
 export function LeadCard({
   lead,
   draggable = true,
@@ -40,7 +47,7 @@ export function LeadCard({
       }}
       onClick={() => onOpen(lead)}
       className={cn(
-        "cursor-grab space-y-1 rounded-md border border-l-2 bg-card p-3 text-sm shadow-sm transition-all hover:-translate-y-0.5 hover:shadow-md active:cursor-grabbing active:translate-y-0",
+        "cursor-grab space-y-0.5 rounded-md border border-l-2 bg-card p-1.5 text-xs shadow-sm transition-all hover:-translate-y-0.5 hover:shadow-md active:cursor-grabbing active:translate-y-0",
         ACCENT_BORDER[accent],
         ACCENT_WASH[accent],
         // Staleness is a more urgent signal than pipeline stage — wins when present.
@@ -48,32 +55,31 @@ export function LeadCard({
         staleness === "warning" && "border-l-amber-500",
       )}
     >
-      <div className="flex items-center justify-between gap-2">
-        <div className="font-medium">{lead.name}</div>
-        <LeadScoreBadge score={score} className="shrink-0" />
-        {staleness === "overdue" && (
+      <div className="flex items-center justify-between gap-1">
+        <div className="min-w-0 truncate font-medium">{lead.name}</div>
+        {(staleness === "overdue" || staleness === "warning") && (
           <span
-            title={`No contact in ${FOLLOWUP_SLA_HOURS}+ hours`}
-            className="h-1.5 w-1.5 shrink-0 rounded-full bg-destructive"
-          />
-        )}
-        {staleness === "warning" && (
-          <span
-            title="Follow-up due soon"
-            className="h-1.5 w-1.5 shrink-0 rounded-full bg-amber-500"
+            title={
+              staleness === "overdue"
+                ? `No contact in ${FOLLOWUP_SLA_HOURS}+ hours`
+                : "Follow-up due soon"
+            }
+            className={cn(
+              "h-1.5 w-1.5 shrink-0 rounded-full",
+              staleness === "overdue" ? "bg-destructive" : "bg-amber-500",
+            )}
           />
         )}
       </div>
-      {lead.company && <div className="text-xs text-muted-foreground">{lead.company}</div>}
-      <div className="flex items-center justify-between text-xs text-muted-foreground">
-        <span>{lead.source}</span>
-        {lead.potentialRevenue != null && (
-          <span>{formatIDR(lead.potentialRevenue.toString())}</span>
-        )}
+      <div className="flex items-center justify-between gap-1 text-muted-foreground">
+        <span className="min-w-0 truncate">{lead.owner?.name ?? "—"}</span>
+        <span className="flex shrink-0 items-center gap-1">
+          {lead.potentialRevenue != null && (
+            <span className="tabular-nums">{formatIDRCompact(lead.potentialRevenue.toString())}</span>
+          )}
+          <LeadScoreBadge score={score} />
+        </span>
       </div>
-      {lead.owner && (
-        <div className="text-xs text-muted-foreground">Owner: {lead.owner.name}</div>
-      )}
     </div>
   );
 }
