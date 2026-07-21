@@ -67,7 +67,10 @@ export function LeadPipelineBoard({
         )}
       </div>
 
-      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6">
+      {/* All 6 pipeline stages stay visible on one screen (no horizontal
+          scroll) so the whole pipeline reads at a glance — LeadCard is
+          deliberately compact to fit this width. */}
+      <div className="grid grid-cols-6 gap-2">
         {COLUMNS.map((col) => {
           const columnLeads = leads.filter((l) => l.status === col.status);
           return (
@@ -84,13 +87,13 @@ export function LeadPipelineBoard({
                 if (leadId) handleDrop(col.status, leadId);
               }}
               className={cn(
-                "flex min-h-40 flex-col gap-2 rounded-lg border bg-muted/20 p-3",
+                "flex min-h-40 min-w-0 flex-col gap-1.5 rounded-lg border bg-muted/20 p-2",
                 dragOverColumn === col.status && "ring-2 ring-primary",
               )}
             >
-              <div className="flex items-center justify-between text-sm font-medium">
-                <span>{col.label}</span>
-                <span className="text-muted-foreground">{columnLeads.length}</span>
+              <div className="flex items-center justify-between px-0.5 text-xs font-medium">
+                <span className="truncate">{col.label}</span>
+                <span className="shrink-0 text-muted-foreground">{columnLeads.length}</span>
               </div>
               {columnLeads.map((lead) => (
                 <LeadCard
