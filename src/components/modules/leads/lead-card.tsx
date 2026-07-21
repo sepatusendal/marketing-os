@@ -5,6 +5,7 @@ import { FOLLOWUP_SLA_HOURS, getLeadStaleness } from "@/lib/lead-followup";
 import { computeLeadScore } from "@/lib/lead-score";
 import { LeadScoreBadge } from "./lead-score-badge";
 import { cn } from "@/lib/utils";
+import { ACCENT_BORDER, ACCENT_WASH, LEAD_STATUS_ACCENT } from "@/lib/accent-colors";
 import type { Lead, User, Campaign, Client } from "@prisma/client";
 
 export type LeadWithRelations = Omit<Lead, "potentialRevenue"> & {
@@ -29,6 +30,7 @@ export function LeadCard({
     status: lead.status,
     potentialRevenue: lead.potentialRevenue != null ? Number(lead.potentialRevenue) : null,
   });
+  const accent = LEAD_STATUS_ACCENT[lead.status];
 
   return (
     <div
@@ -38,9 +40,12 @@ export function LeadCard({
       }}
       onClick={() => onOpen(lead)}
       className={cn(
-        "cursor-grab space-y-1 rounded-md border bg-card p-3 text-sm shadow-sm transition-all hover:-translate-y-0.5 hover:border-primary/30 hover:shadow-md active:cursor-grabbing active:translate-y-0",
-        staleness === "overdue" && "border-l-2 border-l-destructive",
-        staleness === "warning" && "border-l-2 border-l-amber-500",
+        "cursor-grab space-y-1 rounded-md border border-l-2 bg-card p-3 text-sm shadow-sm transition-all hover:-translate-y-0.5 hover:shadow-md active:cursor-grabbing active:translate-y-0",
+        ACCENT_BORDER[accent],
+        ACCENT_WASH[accent],
+        // Staleness is a more urgent signal than pipeline stage — wins when present.
+        staleness === "overdue" && "border-l-destructive",
+        staleness === "warning" && "border-l-amber-500",
       )}
     >
       <div className="flex items-center justify-between gap-2">

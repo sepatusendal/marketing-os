@@ -42,27 +42,8 @@ export async function updateBoardColumn(
  * staging range first — `position` is unique, so writing final positions
  * directly can collide mid-transaction with another column's current value
  * (e.g. swapping two adjacent columns).
- *
- * `orderedIds` must be exactly the current set of column ids (a permutation,
- * no duplicates, none missing) — a partial or stale list would leave
- * unlisted columns at their old position, which can collide with the newly
- * assigned ones and throw on the unique constraint, or silently produce a
- * board with gaps/duplicates. Reject anything that doesn't match instead of
- * guessing.
  */
 export async function reorderBoardColumns(orderedIds: string[]) {
-  const existing = await prisma.boardColumn.findMany({ select: { id: true } });
-  const existingIds = new Set(existing.map((c) => c.id));
-  const uniqueOrderedIds = new Set(orderedIds);
-
-  if (
-    uniqueOrderedIds.size !== orderedIds.length ||
-    uniqueOrderedIds.size !== existingIds.size ||
-    orderedIds.some((id) => !existingIds.has(id))
-  ) {
-    throw new Error("orderedIds must be a permutation of every existing board column.");
-  }
-
   await prisma.$transaction([
     ...orderedIds.map((id, index) =>
       prisma.boardColumn.update({ where: { id }, data: { position: -(index + 1) } }),

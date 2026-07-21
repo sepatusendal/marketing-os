@@ -27,7 +27,7 @@ export function Topbar({
   const [open, setOpen] = useState(false);
 
   return (
-    <header className="sticky top-0 z-40 flex h-14 items-center gap-3 border-b bg-background/80 px-4 backdrop-blur-sm supports-backdrop-filter:bg-background/60">
+    <header className="glass-panel sticky top-0 z-40 flex h-14 items-center gap-3 border-b px-4">
       <Sheet open={open} onOpenChange={setOpen}>
         <SheetTrigger
           render={

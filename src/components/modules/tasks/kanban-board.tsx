@@ -133,52 +133,6 @@ export function KanbanBoard({
               <div className="text-sm font-medium text-muted-foreground">{lane.label}</div>
             )}
             <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
-              {(() => {
-                const unassignedTasks = laneTasks.filter((t) => t.columnId === null);
-                if (unassignedTasks.length === 0 || sortedColumns.length === 0) return null;
-                const fallbackColumnId = sortedColumns[0].id;
-                return (
-                  <div
-                    onDragOver={(e) => {
-                      e.preventDefault();
-                      setDragOverColumn("__unassigned__");
-                    }}
-                    onDragLeave={() => setDragOverColumn(null)}
-                    onDrop={(e) => {
-                      e.preventDefault();
-                      const taskId = e.dataTransfer.getData("text/plain");
-                      // No real "unassigned" column exists — dropping here just
-                      // parks the task back on the first column instead of
-                      // leaving it columnless again.
-                      if (taskId) handleDrop(fallbackColumnId, taskId);
-                    }}
-                    className={cn(
-                      "flex min-h-40 flex-col gap-2 rounded-lg border border-dashed bg-muted/20 p-3",
-                      dragOverColumn === "__unassigned__" && "ring-2 ring-primary",
-                    )}
-                  >
-                    <div className="flex items-center justify-between text-sm font-medium">
-                      <span>Unassigned</span>
-                      <Badge variant="outline">{unassignedTasks.length}</Badge>
-                    </div>
-                    <p className="text-xs text-muted-foreground">
-                      No column set — usually because its column was deleted. Open a card and
-                      pick a column to put it back on the board.
-                    </p>
-                    {unassignedTasks.map((task) => (
-                      <TaskCard
-                        key={task.id}
-                        task={task}
-                        showCampaign={showCampaign}
-                        onOpen={(t) => {
-                          setSelectedTaskId(t.id);
-                          setDrawerOpen(true);
-                        }}
-                      />
-                    ))}
-                  </div>
-                );
-              })()}
               {sortedColumns.map((col) => {
                 const columnTasks = laneTasks.filter((t) => t.columnId === col.id);
                 const overWip = col.wipLimit != null && columnTasks.length > col.wipLimit;

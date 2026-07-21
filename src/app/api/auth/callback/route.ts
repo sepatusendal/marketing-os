@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
-import { upsertUserFromAuth, findUserByEmail } from "@/server/user.service";
+import { prisma } from "@/lib/prisma";
+import { upsertUserFromAuth } from "@/server/user.service";
 
 export async function GET(request: Request) {
   const { searchParams, origin } = new URL(request.url);
@@ -17,7 +18,9 @@ export async function GET(request: Request) {
       // but Google OAuth lets anyone with a Google account complete the
       // exchange. Only let it through if a User row already exists for this
       // email — otherwise this would silently auto-provision accounts.
-      const invited = data.user.email ? await findUserByEmail(data.user.email) : null;
+      const invited = data.user.email
+        ? await prisma.user.findUnique({ where: { email: data.user.email } })
+        : null;
 
       if (!invited) {
         await supabase.auth.signOut();

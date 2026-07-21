@@ -103,27 +103,34 @@
   --sidebar-accent-foreground: oklch(0.32 0.14 276);
   --sidebar-border: oklch(0.91 0.005 280);
   --sidebar-ring: oklch(0.53 0.19 276 / 0.5);
+  --glass-tint: oklch(1 0 0);
+  --glass-highlight: oklch(1 0 0 / 60%);
 }
 
 .dark {
   /* Deep charcoal, not pure black — Vercel/Linear dark chrome. */
   --background: oklch(0.155 0.006 280);
-  --foreground: oklch(0.96 0.003 280);
-  --card: oklch(0.195 0.008 280);
-  --card-foreground: oklch(0.96 0.003 280);
-  --popover: oklch(0.205 0.008 280);
-  --popover-foreground: oklch(0.96 0.003 280);
+  --foreground: oklch(0.97 0.003 280);
+  /* Card/popover lifted well clear of the page background (was only 0.04
+     apart) so surfaces actually read as distinct layers instead of
+     everything blurring into one dark mass. */
+  --card: oklch(0.24 0.01 280);
+  --card-foreground: oklch(0.97 0.003 280);
+  --popover: oklch(0.25 0.011 280);
+  --popover-foreground: oklch(0.97 0.003 280);
   --primary: oklch(0.72 0.16 276);
   --primary-foreground: oklch(0.15 0.03 276);
-  --secondary: oklch(0.245 0.008 280);
-  --secondary-foreground: oklch(0.96 0.003 280);
-  --muted: oklch(0.225 0.007 280);
-  --muted-foreground: oklch(0.65 0.012 280);
-  --accent: oklch(0.27 0.04 276);
-  --accent-foreground: oklch(0.87 0.09 276);
+  --secondary: oklch(0.29 0.01 280);
+  --secondary-foreground: oklch(0.97 0.003 280);
+  --muted: oklch(0.26 0.009 280);
+  /* Bumped for long-read comfort — was too close to the background for
+     secondary text to stay comfortable over long sessions. */
+  --muted-foreground: oklch(0.72 0.014 280);
+  --accent: oklch(0.31 0.045 276);
+  --accent-foreground: oklch(0.89 0.09 276);
   --destructive: oklch(0.704 0.19 22.216);
-  --border: oklch(1 0 0 / 10%);
-  --input: oklch(1 0 0 / 14%);
+  --border: oklch(1 0 0 / 13%);
+  --input: oklch(1 0 0 / 16%);
   --ring: oklch(0.72 0.16 276 / 0.5);
   --chart-1: oklch(0.72 0.16 276);
   --chart-2: oklch(0.75 0.12 200);
@@ -138,6 +145,8 @@
   --sidebar-accent-foreground: oklch(0.9 0.08 276);
   --sidebar-border: oklch(1 0 0 / 10%);
   --sidebar-ring: oklch(0.72 0.16 276 / 0.5);
+  --glass-tint: oklch(0.24 0.01 280);
+  --glass-highlight: oklch(1 0 0 / 8%);
 }
 
 @layer base {
@@ -146,6 +155,26 @@
   }
   body {
     @apply bg-background text-foreground;
+    position: relative;
+  }
+  /* Ambient background so glass surfaces have something to blur — a flat
+     solid page makes backdrop-filter pointless. Fixed + very low opacity so
+     it reads as texture, not decoration; pointer-events-none so it never
+     intercepts clicks. */
+  body::before {
+    content: "";
+    position: fixed;
+    inset: 0;
+    z-index: -1;
+    pointer-events: none;
+    background-image:
+      radial-gradient(ellipse 900px 600px at 8% -10%, var(--chart-1) 0%, transparent 60%),
+      radial-gradient(ellipse 800px 700px at 100% 0%, var(--chart-2) 0%, transparent 55%),
+      radial-gradient(ellipse 700px 600px at 90% 100%, var(--chart-4) 0%, transparent 55%);
+    opacity: 0.06;
+  }
+  .dark body::before {
+    opacity: 0.12;
   }
   html {
     @apply font-sans;
@@ -164,6 +193,48 @@
   [role="option"],
   summary {
     cursor: pointer;
+  }
+}
+
+/* Apple-Control-Center-style frosted glass — translucent tinted surface,
+   heavy blur+saturation boost, and a hairline top highlight. Used on chrome
+   (sidebar/topbar) and every overlay primitive (dialog/sheet/popover/
+   dropdown/select) so menus and panels read as floating glass rather than
+   flat opaque boxes. Falls back to a plain solid surface in browsers
+   without backdrop-filter support. */
+.glass-panel {
+  background-color: var(--popover);
+  background-color: color-mix(in oklch, var(--glass-tint) 72%, transparent);
+  border-color: color-mix(in oklch, var(--foreground) 10%, transparent);
+  box-shadow:
+    inset 0 1px 0 0 var(--glass-highlight),
+    0 8px 30px -12px oklch(0 0 0 / 0.35);
+}
+
+@supports (backdrop-filter: blur(1px)) or (-webkit-backdrop-filter: blur(1px)) {
+  .glass-panel {
+    backdrop-filter: blur(20px) saturate(160%);
+    -webkit-backdrop-filter: blur(20px) saturate(160%);
+  }
+}
+
+/* Lighter glass for large, scrollable surfaces (the task/lead drawer Sheet)
+   where a full 20px blur over a big compositing area is real GPU cost for
+   little visual benefit — same tint/border/highlight, smaller blur radius,
+   no saturation boost. */
+.glass-panel-light {
+  background-color: var(--popover);
+  background-color: color-mix(in oklch, var(--glass-tint) 85%, transparent);
+  border-color: color-mix(in oklch, var(--foreground) 10%, transparent);
+  box-shadow:
+    inset 0 1px 0 0 var(--glass-highlight),
+    0 8px 30px -12px oklch(0 0 0 / 0.35);
+}
+
+@supports (backdrop-filter: blur(1px)) or (-webkit-backdrop-filter: blur(1px)) {
+  .glass-panel-light {
+    backdrop-filter: blur(8px);
+    -webkit-backdrop-filter: blur(8px);
   }
 }
 
