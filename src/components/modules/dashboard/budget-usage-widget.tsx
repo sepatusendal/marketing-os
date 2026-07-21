@@ -1,7 +1,10 @@
 import Link from "next/link";
+import { Wallet } from "lucide-react";
 import { WidgetCard } from "./widget-card";
+import { DonutChart } from "@/components/ui/charts/donut-chart";
 import { formatIDR } from "@/lib/format";
 import { cn } from "@/lib/utils";
+import { WIDGET_ACCENT, STATUS_TEXT, STATUS_HEX, budgetStatus } from "@/lib/accent-colors";
 import type { BudgetPeriod } from "@/server/dashboard.service";
 
 const PERIODS: { value: BudgetPeriod; label: string }[] = [
@@ -17,9 +20,14 @@ export function BudgetUsageWidget({
   usage: { allocated: number; used: number; remaining: number; percentUsed: number };
   period: BudgetPeriod;
 }) {
+  const status = budgetStatus(usage.percentUsed);
+  const overBudget = usage.percentUsed > 100;
+
   return (
     <WidgetCard
-      title="Budget Usage"
+      title="Budget Overview"
+      accent={WIDGET_ACCENT.budget}
+      icon={Wallet}
       action={
         <div className="flex gap-1 text-xs">
           {PERIODS.map((p) => (
@@ -37,23 +45,22 @@ export function BudgetUsageWidget({
         </div>
       }
     >
-      <div className="space-y-2">
-        <div className="h-2 w-full rounded-full bg-muted">
-          <div
-            className={cn(
-              "h-2 rounded-full",
-              usage.percentUsed > 100 ? "bg-destructive" : "bg-primary",
-            )}
-            style={{ width: `${Math.min(usage.percentUsed, 100)}%` }}
-          />
-        </div>
-        <div className="flex justify-between text-sm">
-          <span>
-            {formatIDR(usage.used)} / {formatIDR(usage.allocated)}
-          </span>
-          <span className="text-muted-foreground">{usage.percentUsed}%</span>
-        </div>
-      </div>
+      <DonutChart
+        centerValue={`${usage.percentUsed}%`}
+        centerLabel={overBudget ? "over budget" : "used"}
+        valueFormat="idr"
+        data={
+          overBudget
+            ? [{ key: "used", label: "Used (over budget)", value: usage.used, colorHex: STATUS_HEX.critical }]
+            : [
+                { key: "used", label: "Used", value: usage.used, colorHex: STATUS_HEX[status] },
+                { key: "remaining", label: "Left", value: usage.remaining, colorHex: "var(--muted-foreground)" },
+              ]
+        }
+      />
+      <p className={cn("mt-3 text-xs", STATUS_TEXT[status])}>
+        {formatIDR(usage.used)} of {formatIDR(usage.allocated)} total budget
+      </p>
     </WidgetCard>
   );
 }

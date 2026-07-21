@@ -6,8 +6,9 @@ import {
   subDays,
   endOfDay,
 } from "date-fns";
-import type { CampaignStatus, LeadStatus } from "@prisma/client";
+import type { CampaignStatus, LeadStatus, LeadSource } from "@prisma/client";
 import { FOLLOWUP_SLA_HOURS } from "@/lib/lead-followup";
+import { jakartaDayKey, jakartaDayLabel, jakartaStartOfDay, jakartaStartOfMonth, jakartaDayRange } from "@/lib/jakarta-time";
 
 export async function getActiveCampaigns() {
   return prisma.campaign.findMany({
@@ -137,4 +138,101 @@ export async function getCalendarEvents(referenceDate: Date) {
   ]);
 
   return { campaigns, tasks };
+}
+
+export type PerformanceRange = "7d" | "30d" | "month";
+
+function rangeStart(range: PerformanceRange): Date {
+  const now = new Date();
+  if (range === "7d") return jakartaStartOfDay(subDays(now, 6));
+  if (range === "30d") return jakartaStartOfDay(subDays(now, 29));
+  return jakartaStartOfMonth(now);
+}
+
+/**
+ * Real, trackable performance signal — new leads, budget spent, and tasks
+ * completed per day. Deliberately does NOT include ad-platform metrics
+ * (impressions/reach/clicks): MarketingOS has no Meta/Google Ads
+ * integration (PRD §4 non-goal), so those numbers don't exist anywhere in
+ * the database and would have to be fabricated to show them.
+ *
+ * Day buckets are Jakarta calendar days (CLAUDE.md: store UTC, display
+ * Asia/Jakarta) — bucketing by the server process's own local time (UTC on
+ * Vercel) would misattribute anything from 00:00–06:59 WIB to the previous day.
+ */
+export async function getPerformanceTrend(range: PerformanceRange) {
+  const from = rangeStart(range);
+  const now = new Date();
+  const days = jakartaDayRange(from, now);
+  const dayKeys = days.map((d) => jakartaDayKey(d));
+
+  const [leads, tasks, expenses] = await Promise.all([
+    prisma.lead.findMany({ where: { createdAt: { gte: from } }, select: { createdAt: true } }),
+    prisma.task.findMany({
+      where: { status: "COMPLETED", updatedAt: { gte: from } },
+      select: { updatedAt: true },
+    }),
+    prisma.expense.findMany({ where: { spentAt: { gte: from } }, select: { spentAt: true, amount: true } }),
+  ]);
+
+  const newLeadsByDay = new Map<string, number>();
+  for (const l of leads) {
+    const key = jakartaDayKey(l.createdAt);
+    newLeadsByDay.set(key, (newLeadsByDay.get(key) ?? 0) + 1);
+  }
+  const tasksCompletedByDay = new Map<string, number>();
+  for (const t of tasks) {
+    const key = jakartaDayKey(t.updatedAt);
+    tasksCompletedByDay.set(key, (tasksCompletedByDay.get(key) ?? 0) + 1);
+  }
+  const budgetSpentByDay = new Map<string, number>();
+  for (const e of expenses) {
+    const key = jakartaDayKey(e.spentAt);
+    budgetSpentByDay.set(key, (budgetSpentByDay.get(key) ?? 0) + Number(e.amount));
+  }
+
+  return {
+    labels: days.map((d) => jakartaDayLabel(d)),
+    newLeads: dayKeys.map((k) => newLeadsByDay.get(k) ?? 0),
+    tasksCompleted: dayKeys.map((k) => tasksCompletedByDay.get(k) ?? 0),
+    budgetSpent: dayKeys.map((k) => budgetSpentByDay.get(k) ?? 0),
+  };
+}
+
+export async function getLeadSourceBreakdown() {
+  const rows = await prisma.lead.groupBy({ by: ["source"], _count: true });
+  const counts = Object.fromEntries(rows.map((r) => [r.source, r._count])) as Record<LeadSource, number>;
+  const order: LeadSource[] = [
+    "WEBSITE",
+    "INSTAGRAM",
+    "WHATSAPP",
+    "REFERRAL",
+    "PAID_ADS",
+    "EMAIL",
+    "TIKTOK",
+    "EVENT",
+    "OTHER",
+  ];
+  return order.map((source) => ({ source, count: counts[source] ?? 0 })).filter((d) => d.count > 0);
+}
+
+export async function getUpcomingTasks(userId: string, days = 7) {
+  const cutoff = jakartaStartOfDay(subDays(new Date(), -days - 1)); // Jakarta midnight, `days` days from today, exclusive
+  return prisma.task.findMany({
+    where: {
+      assigneeId: userId,
+      status: { not: "COMPLETED" },
+      dueDate: { lt: cutoff },
+    },
+    include: { campaign: { select: { id: true, name: true } } },
+    orderBy: { dueDate: "asc" },
+    take: 8,
+  });
+}
+
+/** Real "new this week" context for the Active Campaigns KPI card — never a fabricated percentage. */
+export async function getNewCampaignsThisWeek() {
+  return prisma.campaign.count({
+    where: { startDate: { gte: jakartaStartOfDay(subDays(new Date(), 6)) } },
+  });
 }

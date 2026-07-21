@@ -88,12 +88,9 @@ export const PRIORITY_ACCENT: Record<Priority, AccentColor> = {
   URGENT: "red",
 };
 
-/** Same hues as CampaignStatusBadge (status-badge.tsx) for PLANNING/RUNNING/
- * COMPLETED/ARCHIVED, so a bar in the dashboard chart and the badge on the
- * campaigns table agree on what "RUNNING" looks like. DRAFT is the one
- * exception: the badge uses the generic `bg-muted` theme token (no real
- * hue), which would be invisible as a solid bar fill against the track's
- * own `bg-muted` background — slate is the closest visible neutral. */
+/** Same hues as CampaignStatusBadge (status-badge.tsx) — kept in sync so a
+ * bar in the dashboard chart and the badge on the campaigns table always
+ * agree on what "RUNNING" looks like. */
 export const CAMPAIGN_STATUS_BAR: Record<CampaignStatus, string> = {
   DRAFT: "bg-slate-400 dark:bg-slate-500",
   PLANNING: "bg-blue-500",

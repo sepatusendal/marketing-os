@@ -1,12 +1,18 @@
 import Link from "next/link";
+import { AlarmClock } from "lucide-react";
 import { WidgetCard } from "./widget-card";
+import { Avatar, AvatarFallback } from "@/components/ui/avatar";
+import { LeadScoreBadge } from "@/components/modules/leads/lead-score-badge";
 import { hoursSinceContact } from "@/lib/lead-followup";
+import { computeLeadScore } from "@/lib/lead-score";
+import { WIDGET_ACCENT } from "@/lib/accent-colors";
+import { initials } from "@/lib/format";
 import type { Lead, User, Campaign } from "@prisma/client";
 
 function agoLabel(hours: number) {
   const days = Math.floor(hours / 24);
-  if (days >= 1) return `${days}d ago`;
-  return `${Math.max(1, Math.floor(hours))}h ago`;
+  if (days >= 1) return `${days}d overdue`;
+  return `${Math.max(1, Math.floor(hours))}h overdue`;
 }
 
 export function FollowupWidget({
@@ -18,23 +24,54 @@ export function FollowupWidget({
   })[];
 }) {
   return (
-    <WidgetCard title={`Needs Follow-up (${leads.length})`}>
+    <WidgetCard
+      title={`Needs Follow-up (${leads.length})`}
+      accent={WIDGET_ACCENT.followup}
+      icon={AlarmClock}
+      action={
+        <Link href="/leads?view=table" className="text-xs text-muted-foreground hover:text-foreground hover:underline">
+          View all
+        </Link>
+      }
+    >
       {leads.length === 0 ? (
         <p className="text-sm text-muted-foreground">All leads contacted within SLA. Nice.</p>
       ) : (
-        <ul className="space-y-2">
-          {leads.map((l) => (
-            <li key={l.id} className="flex items-center justify-between gap-2 text-sm">
-              <Link href="/leads?view=table" className="flex items-center gap-2 hover:underline">
-                <span className="h-1.5 w-1.5 shrink-0 rounded-full bg-destructive" />
-                {l.name}
-              </Link>
-              <span className="text-xs text-destructive">
-                {agoLabel(hoursSinceContact(l))}
-                {l.owner && ` · ${l.owner.name}`}
-              </span>
-            </li>
-          ))}
+        <ul className="space-y-1">
+          {leads.map((l) => {
+            const score = computeLeadScore({
+              source: l.source,
+              status: l.status,
+              potentialRevenue: l.potentialRevenue != null ? Number(l.potentialRevenue) : null,
+            });
+            return (
+              <li key={l.id}>
+                <Link
+                  href="/leads?view=table"
+                  className="flex items-center gap-3 rounded-lg p-1.5 text-sm transition-colors hover:bg-muted"
+                >
+                  <Avatar size="sm">
+                    <AvatarFallback className="bg-destructive/10 text-xs font-medium text-destructive">
+                      {initials(l.owner?.name ?? l.name)}
+                    </AvatarFallback>
+                  </Avatar>
+                  <div className="min-w-0 flex-1">
+                    <div className="flex items-center gap-1.5">
+                      <span className="truncate font-medium text-foreground">{l.name}</span>
+                      <LeadScoreBadge score={score} />
+                    </div>
+                    <p className="truncate text-xs text-muted-foreground">
+                      {l.owner?.name ?? "Unassigned"}
+                      {l.campaign && ` · ${l.campaign.name}`}
+                    </p>
+                  </div>
+                  <span className="shrink-0 text-xs font-medium text-destructive">
+                    {agoLabel(hoursSinceContact(l))}
+                  </span>
+                </Link>
+              </li>
+            );
+          })}
         </ul>
       )}
     </WidgetCard>
