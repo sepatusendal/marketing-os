@@ -1,5 +1,7 @@
 # MarketingOS
 
+[![CI](https://github.com/sepatusendal/marketing-os/actions/workflows/ci.yml/badge.svg)](https://github.com/sepatusendal/marketing-os/actions/workflows/ci.yml)
+
 MarketingOS is an internal web application that serves as the single workspace for the marketing team — campaigns, tasks, leads, budget, assets, documentation, and a dashboard that summarizes everything in real time.
 
 Full product spec lives in [`docs/marketingos-prd.md`](docs/marketingos-prd.md).
