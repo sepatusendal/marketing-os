@@ -46,6 +46,7 @@ Per project:
    | `APP_BASE_URL` | Domain final buat scope itu (lihat catatan di bawah) |
    | `RESEND_API_KEY` | Opsional — skip kalau belum mau setup email |
    | `EMAIL_FROM` | Opsional, sepasang sama `RESEND_API_KEY` |
+   | `CRON_SECRET` | Scope **Production** doang. String random (misal generate lewat `openssl rand -hex 32`) — dipakai buat ngamanin cron job "keep database awake" (lihat langkah 3.5 di bawah) |
 
    > **`connection_limit`**: jangan set `1`. Dashboard app ini nembak banyak query paralel per
    > halaman — `connection_limit=1` bikin query saling antre dan timeout (`P2024`, lihat
@@ -76,6 +77,20 @@ Workflow ini otomatis jalan tiap ada push ke `main` yang nyentuh folder `prisma/
 Buat trigger manual (misal migrasi pertama kali, atau migration folder-nya udah lama di-commit
 sebelum secret ini ada): repo GitHub → tab **Actions** → pilih workflow **migrate-prod** →
 **Run workflow**.
+
+## 3.5. Cron job biar Supabase prod nggak ke-pause
+
+Supabase free tier auto-pause project yang nggak ada aktivitas ~1 minggu. Repo ini udah ada
+`vercel.json` yang nyuruh Vercel manggil `/api/cron/keep-alive` tiap hari (03:00 UTC) buat nyentuh
+database prod dikit, biar Supabase selalu nganggep project itu aktif. Ini otomatis aktif begitu
+`vercel.json` ke-deploy — **syaratnya cuma satu**: env var `CRON_SECRET` (lihat tabel env vars di
+atas) harus keisi di Vercel scope Production, kalau nggak, cron-nya bakal jalan tapi ditolak
+(`401 Unauthorized`) dan nggak efektif.
+
+Cron ini **cuma jalan buat Production**, nggak buat Preview/dev — Vercel Cron memang didesain
+begitu. Kalau project dev sempet ke-pause karena lama nggak dipakai buat development, itu nggak
+masalah, tinggal Restore manual pas mau dipakai lagi (lihat
+[Backup & Disaster Recovery](./04-backup-disaster-recovery.md#kalau-project-supabase-ke-pause-nggak-ada-aktivitas-lama)).
 
 ## 4. Setup domain custom (opsional, kalau punya)
 

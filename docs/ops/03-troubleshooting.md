@@ -117,6 +117,31 @@ di-escape otomatis pas export).
    `.github/workflows/migrate-prod.yml` punya trigger `workflow_dispatch:` (harusnya udah ada
    dari commit `b55c511`)
 
+### Project Supabase prod ke-pause padahal udah ada cron job "keep-alive"
+
+**Cek:**
+1. Vercel project → **Settings → Cron Jobs** — pastiin ada satu entry `/api/cron/keep-alive`
+   berstatus aktif
+2. Vercel project → tab **Logs**, cari request ke `/api/cron/keep-alive` — kalau responnya
+   `401 Unauthorized`, artinya env var `CRON_SECRET` belum diset (atau salah) di scope
+   **Production**. Set/perbaiki di Environment Variables, lalu Redeploy.
+3. Kalau plan Vercel-nya bukan yang support cron (cron job butuh minimal plan tertentu), cron
+   nggak akan jalan sama sekali — cek dokumentasi Vercel soal cron buat plan yang lagi dipakai.
+4. Kalau semua di atas normal tapi tetap ke-pause, restore manual aja (lihat
+   [Backup & Disaster Recovery](./04-backup-disaster-recovery.md)) — cron ini best-effort, bukan
+   garansi mutlak.
+
+### `npm run backup` gagal dengan "Authentication failed"
+
+**Penyebab:** Connection string yang dipakai (dari `.env` lokal atau `BACKUP_DATABASE_URL`) punya
+password yang salah/kadaluarsa — sering kejadian kalau password project itu pernah di-reset tapi
+`.env` lokal nggak ikut diupdate.
+
+**Fix:** Ambil connection string **direct** (port 5432) yang fresh dari Supabase dashboard project
+terkait (**Settings → Database → Connection string**), pakai itu di `BACKUP_DATABASE_URL` (jangan
+edit `.env` kalau cuma buat backup sekali, lihat contoh di
+[Backup & Disaster Recovery](./04-backup-disaster-recovery.md)).
+
 ### Nggak tau harus mulai dari mana buat error yang nggak ada di daftar ini
 
 1. Screenshot error-nya lengkap (termasuk URL di address bar)

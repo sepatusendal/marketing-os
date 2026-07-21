@@ -93,7 +93,8 @@ Tiap user juga bisa matiin email notifikasi buat diri sendiri di **Settings → 
 
 ## Backup & departemen
 
-- **Full backup (JSON)**: **Settings** → tombol backup export (perlu role OWNER/ADMIN). Detail di
+- **Full backup (JSON)**: **Settings** → tombol backup export (perlu role OWNER/ADMIN), atau
+  `npm run backup` dari terminal. Detail di
   [Backup & Disaster Recovery](./04-backup-disaster-recovery.md).
 - **Daftar departemen**: nggak ada halaman edit terpisah — daftar departemen itu otomatis dari
   nilai yang pernah diisi di field "Department" pada campaign/user manapun. Ketik nama departemen

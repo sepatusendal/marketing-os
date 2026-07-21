@@ -34,6 +34,9 @@ yarn-error.log*
 .env*
 !.env.example
 
+# local backup dumps (real data — never commit)
+/backups/
+
 # vercel
 .vercel
 
