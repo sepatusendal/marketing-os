@@ -5,10 +5,13 @@ name: migrate-prod
 # secret to be set in this repo's GitHub Actions secrets before it can run
 # successfully — until then this workflow will fail at the migrate step,
 # which is the safe default (no accidental prod writes with an unset URL).
+# workflow_dispatch allows a manual run from the Actions tab, needed the
+# first time since no new push touches prisma/migrations/** at that point.
 on:
   push:
     branches: [main]
     paths: ["prisma/migrations/**"]
+  workflow_dispatch: {}
 
 jobs:
   migrate:
