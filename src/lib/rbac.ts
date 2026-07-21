@@ -41,9 +41,24 @@ export type Resource = {
 const { OWNER, ADMIN, MANAGER, MARKETING, CRM, FINANCE, DESIGNER, VIEWER } =
   Role;
 
-// PRD §6.2 permission matrix, transcribed 1:1. Do not scatter role checks
-// anywhere else in the app — this table is the single source of truth.
-const MATRIX: Record<Action, Role[]> = {
+/** Display/hierarchy order for role, most privileged first. */
+export const ROLE_HIERARCHY: Role[] = [
+  OWNER,
+  ADMIN,
+  MANAGER,
+  MARKETING,
+  CRM,
+  FINANCE,
+  DESIGNER,
+  VIEWER,
+];
+
+// PRD §6.2 permission matrix, transcribed 1:1 (amended: MARKETING added to
+// lead:crud so marketing users can log their own leads instead of routing
+// every lead through CRM). Do not scatter role checks anywhere else in the
+// app — this table is the single source of truth. Exported read-only for
+// the Settings "Roles & Permissions" reference page.
+export const MATRIX: Record<Action, Role[]> = {
   "user:manage": [OWNER, ADMIN],
   "settings:manage": [OWNER, ADMIN],
   "campaign:create": [OWNER, ADMIN, MANAGER, MARKETING],
@@ -61,7 +76,7 @@ const MATRIX: Record<Action, Role[]> = {
     DESIGNER,
   ],
   "board:manage_columns": [OWNER, ADMIN, MANAGER],
-  "lead:crud": [OWNER, ADMIN, MANAGER, CRM],
+  "lead:crud": [OWNER, ADMIN, MANAGER, MARKETING, CRM],
   "lead:view": [OWNER, ADMIN, MANAGER, MARKETING, CRM, VIEWER],
   "expense:edit": [OWNER, ADMIN, MANAGER, FINANCE],
   "budget:view": [OWNER, ADMIN, MANAGER, MARKETING, FINANCE, VIEWER],

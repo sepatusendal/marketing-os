@@ -4,6 +4,7 @@ import { authorize } from "@/lib/rbac";
 import { listAllUsers } from "@/server/user.service";
 import { UsersTable } from "@/components/modules/settings/users-table";
 import { InviteUserForm } from "@/components/modules/settings/invite-user-form";
+import { RolePermissionsReference } from "@/components/modules/settings/role-permissions-reference";
 
 export default async function SettingsUsersPage() {
   const user = await getCurrentUser();
@@ -33,6 +34,8 @@ export default async function SettingsUsersPage() {
       <InviteUserForm />
 
       <UsersTable users={users} currentUserId={user.id} />
+
+      <RolePermissionsReference />
     </div>
   );
 }
