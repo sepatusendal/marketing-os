@@ -1,3 +1,4 @@
+import { cache } from "react";
 import { prisma } from "@/lib/prisma";
 import {
   startOfMonth,
@@ -10,15 +11,19 @@ import type { CampaignStatus, LeadStatus, LeadSource } from "@prisma/client";
 import { FOLLOWUP_SLA_HOURS } from "@/lib/lead-followup";
 import { jakartaDayKey, jakartaDayLabel, jakartaStartOfDay, jakartaStartOfMonth, jakartaDayRange } from "@/lib/jakarta-time";
 
-export async function getActiveCampaigns() {
+// Wrapped in React's cache() so the dashboard's Suspense-streamed sections
+// can each request the same data independently without re-querying the
+// database — React dedupes calls with equal arguments within one request.
+
+export const getActiveCampaigns = cache(async function getActiveCampaigns() {
   return prisma.campaign.findMany({
     where: { status: "RUNNING" },
     include: { owner: true },
     orderBy: { endDate: "asc" },
   });
-}
+});
 
-export async function getCampaignsByStatus() {
+export const getCampaignsByStatus = cache(async function getCampaignsByStatus() {
   const rows = await prisma.campaign.groupBy({ by: ["status"], _count: true });
   const counts = Object.fromEntries(rows.map((r) => [r.status, r._count])) as Record<
     CampaignStatus,
@@ -26,11 +31,11 @@ export async function getCampaignsByStatus() {
   >;
   const order: CampaignStatus[] = ["DRAFT", "PLANNING", "RUNNING", "COMPLETED", "ARCHIVED"];
   return order.map((status) => ({ status, count: counts[status] ?? 0 }));
-}
+});
 
 export type BudgetPeriod = "month" | "quarter" | "all";
 
-export async function getBudgetUsage(period: BudgetPeriod) {
+export const getBudgetUsage = cache(async function getBudgetUsage(period: BudgetPeriod) {
   const campaigns = await prisma.campaign.findMany({
     where: { status: { not: "ARCHIVED" } },
     select: { id: true, budgetAllocated: true },
@@ -59,9 +64,9 @@ export async function getBudgetUsage(period: BudgetPeriod) {
     remaining: allocated - used,
     percentUsed: allocated > 0 ? Math.round((used / allocated) * 100) : 0,
   };
-}
+});
 
-export async function getTodaysTasks(userId: string) {
+export const getTodaysTasks = cache(async function getTodaysTasks(userId: string) {
   return prisma.task.findMany({
     where: {
       assigneeId: userId,
@@ -71,9 +76,9 @@ export async function getTodaysTasks(userId: string) {
     include: { campaign: { select: { id: true, name: true } }, assignee: true },
     orderBy: { dueDate: "asc" },
   });
-}
+});
 
-export async function getLeadSummary() {
+export const getLeadSummary = cache(async function getLeadSummary() {
   const [byStatus, newLast7Days] = await Promise.all([
     prisma.lead.groupBy({ by: ["status"], _count: true }),
     prisma.lead.count({ where: { createdAt: { gte: subDays(new Date(), 7) } } }),
@@ -89,10 +94,10 @@ export async function getLeadSummary() {
     byStatus: order.map((status) => ({ status, count: counts[status] ?? 0 })),
     newLast7Days,
   };
-}
+});
 
 /** Active leads not contacted within the follow-up SLA window (48h) — see lib/lead-followup.ts. */
-export async function getLeadsNeedingFollowup() {
+export const getLeadsNeedingFollowup = cache(async function getLeadsNeedingFollowup() {
   const slaThreshold = new Date(Date.now() - FOLLOWUP_SLA_HOURS * 60 * 60 * 1000);
 
   return prisma.lead.findMany({
@@ -107,17 +112,17 @@ export async function getLeadsNeedingFollowup() {
     orderBy: { lastContactAt: "asc" },
     take: 10,
   });
-}
+});
 
-export async function getRecentActivity(limit = 20) {
+export const getRecentActivity = cache(async function getRecentActivity(limit = 20) {
   return prisma.activityLog.findMany({
     include: { actor: true },
     orderBy: { createdAt: "desc" },
     take: limit,
   });
-}
+});
 
-export async function getCalendarEvents(referenceDate: Date) {
+export const getCalendarEvents = cache(async function getCalendarEvents(referenceDate: Date) {
   const start = startOfMonth(referenceDate);
   const end = endOfMonth(referenceDate);
 
@@ -138,7 +143,7 @@ export async function getCalendarEvents(referenceDate: Date) {
   ]);
 
   return { campaigns, tasks };
-}
+});
 
 export type PerformanceRange = "7d" | "30d" | "month";
 
@@ -160,7 +165,7 @@ function rangeStart(range: PerformanceRange): Date {
  * Asia/Jakarta) — bucketing by the server process's own local time (UTC on
  * Vercel) would misattribute anything from 00:00–06:59 WIB to the previous day.
  */
-export async function getPerformanceTrend(range: PerformanceRange) {
+export const getPerformanceTrend = cache(async function getPerformanceTrend(range: PerformanceRange) {
   const from = rangeStart(range);
   const now = new Date();
   const days = jakartaDayRange(from, now);
@@ -197,9 +202,9 @@ export async function getPerformanceTrend(range: PerformanceRange) {
     tasksCompleted: dayKeys.map((k) => tasksCompletedByDay.get(k) ?? 0),
     budgetSpent: dayKeys.map((k) => budgetSpentByDay.get(k) ?? 0),
   };
-}
+});
 
-export async function getLeadSourceBreakdown() {
+export const getLeadSourceBreakdown = cache(async function getLeadSourceBreakdown() {
   const rows = await prisma.lead.groupBy({ by: ["source"], _count: true });
   const counts = Object.fromEntries(rows.map((r) => [r.source, r._count])) as Record<LeadSource, number>;
   const order: LeadSource[] = [
@@ -214,9 +219,9 @@ export async function getLeadSourceBreakdown() {
     "OTHER",
   ];
   return order.map((source) => ({ source, count: counts[source] ?? 0 })).filter((d) => d.count > 0);
-}
+});
 
-export async function getUpcomingTasks(userId: string, days = 7) {
+export const getUpcomingTasks = cache(async function getUpcomingTasks(userId: string, days = 7) {
   const cutoff = jakartaStartOfDay(subDays(new Date(), -days - 1)); // Jakarta midnight, `days` days from today, exclusive
   return prisma.task.findMany({
     where: {
@@ -228,11 +233,11 @@ export async function getUpcomingTasks(userId: string, days = 7) {
     orderBy: { dueDate: "asc" },
     take: 8,
   });
-}
+});
 
 /** Real "new this week" context for the Active Campaigns KPI card — never a fabricated percentage. */
-export async function getNewCampaignsThisWeek() {
+export const getNewCampaignsThisWeek = cache(async function getNewCampaignsThisWeek() {
   return prisma.campaign.count({
     where: { startDate: { gte: jakartaStartOfDay(subDays(new Date(), 6)) } },
   });
-}
+});

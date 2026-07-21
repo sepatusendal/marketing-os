@@ -1,8 +1,11 @@
+import { Suspense } from "react";
 import { CalendarDays, Megaphone, ListTodo, AlarmClock, Wallet } from "lucide-react";
+import type { User } from "@prisma/client";
 import { getCurrentUser } from "@/lib/auth";
 import { formatIDR } from "@/lib/format";
 import { CountUp } from "@/components/ui/count-up";
 import { Sparkline } from "@/components/ui/charts/sparkline";
+import { Skeleton } from "@/components/ui/skeleton";
 import { KpiCard } from "@/components/modules/dashboard/kpi-card";
 import { DashboardHeroIllustration } from "@/components/modules/dashboard/hero-illustration";
 import { ACCENT_HEX } from "@/lib/accent-colors";
@@ -66,42 +69,74 @@ export default async function DashboardPage({
   if (!user) return null;
   const budgetPeriod = (params.budgetPeriod as BudgetPeriod) ?? "all";
   const performanceRange = (params.performanceRange as PerformanceRange) ?? "7d";
-
-  const [
-    activeCampaigns,
-    campaignsByStatus,
-    budgetUsage,
-    todaysTasks,
-    upcomingTasks,
-    leadSummary,
-    leadSources,
-    recentActivity,
-    calendarEvents,
-    notifications,
-    followupLeads,
-    performanceTrend,
-    newCampaignsThisWeek,
-    boardColumns,
-  ] = await Promise.all([
-    getActiveCampaigns(),
-    getCampaignsByStatus(),
-    getBudgetUsage(budgetPeriod),
-    getTodaysTasks(user.id),
-    getUpcomingTasks(user.id),
-    getLeadSummary(),
-    getLeadSourceBreakdown(),
-    getRecentActivity(),
-    getCalendarEvents(new Date()),
-    listNotifications(user.id),
-    getLeadsNeedingFollowup(),
-    getPerformanceTrend(performanceRange),
-    getNewCampaignsThisWeek(),
-    listBoardColumns(),
-  ]);
-
-  const completedColumn = boardColumns.find((c) => c.status === "COMPLETED") ?? null;
   const firstName = user.name.split(" ")[0];
-  const overdueToday = todaysTasks.filter((t) => t.dueDate && t.dueDate < new Date()).length;
+
+  return (
+    <div className="space-y-6">
+      <div className="relative flex flex-wrap items-start justify-between gap-3">
+        <div className="flex flex-col gap-1">
+          <DashboardHeroIllustration />
+          <h1 className="font-heading text-3xl font-semibold tracking-tight">
+            {jakartaGreeting()}, {firstName} 👋
+          </h1>
+          <Suspense fallback={<Skeleton className="h-5 w-72" />}>
+            <BriefingLine />
+          </Suspense>
+        </div>
+        <span className="glass-panel flex items-center gap-2 rounded-full px-3.5 py-1.5 text-sm text-muted-foreground">
+          <CalendarDays className="h-4 w-4" />
+          {jakartaDateLabel()}
+        </span>
+      </div>
+
+      <Suspense fallback={<KpiRowSkeleton />}>
+        <KpiRow user={user} budgetPeriod={budgetPeriod} performanceRange={performanceRange} />
+      </Suspense>
+
+      <Suspense fallback={<RowSkeleton className="lg:grid-cols-4" heights={["h-72 lg:col-span-2", "h-72", "h-72"]} />}>
+        <PerformanceRow budgetPeriod={budgetPeriod} performanceRange={performanceRange} />
+      </Suspense>
+
+      <Suspense fallback={<RowSkeleton className="lg:grid-cols-3" heights={["h-64", "h-64", "h-64"]} />}>
+        <LeadsTasksRow user={user} />
+      </Suspense>
+
+      <Suspense fallback={<RowSkeleton className="lg:grid-cols-3" heights={["h-72 lg:col-span-2", "h-72"]} />}>
+        <CalendarNotifRow user={user} />
+      </Suspense>
+
+      <Suspense fallback={<Skeleton className="h-64 w-full rounded-xl" />}>
+        <RecentActivitySection />
+      </Suspense>
+    </div>
+  );
+}
+
+function KpiRowSkeleton() {
+  return (
+    <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-4">
+      {Array.from({ length: 4 }).map((_, i) => (
+        <Skeleton key={i} className="h-32 w-full rounded-xl" />
+      ))}
+    </div>
+  );
+}
+
+function RowSkeleton({ className, heights }: { className: string; heights: string[] }) {
+  return (
+    <div className={`grid grid-cols-1 gap-4 ${className}`}>
+      {heights.map((h, i) => (
+        <Skeleton key={i} className={`w-full rounded-xl ${h}`} />
+      ))}
+    </div>
+  );
+}
+
+async function BriefingLine() {
+  const [activeCampaigns, followupLeads] = await Promise.all([
+    getActiveCampaigns(),
+    getLeadsNeedingFollowup(),
+  ]);
 
   const briefingParts: string[] = [];
   briefingParts.push(
@@ -116,86 +151,137 @@ export default async function DashboardPage({
   }
 
   return (
-    <div className="space-y-6">
-      <div className="relative flex flex-wrap items-start justify-between gap-3">
-        <div className="flex flex-col gap-1">
-          <DashboardHeroIllustration />
-          <h1 className="font-heading text-3xl font-semibold tracking-tight">
-            {jakartaGreeting()}, {firstName} 👋
-          </h1>
-          <p className="text-muted-foreground">
-            {briefingParts[0].charAt(0).toUpperCase() + briefingParts[0].slice(1)}
-            {briefingParts.length > 1 ? ` — ${briefingParts.slice(1).join(", ")}.` : "."}
-          </p>
-        </div>
-        <span className="glass-panel flex items-center gap-2 rounded-full px-3.5 py-1.5 text-sm text-muted-foreground">
-          <CalendarDays className="h-4 w-4" />
-          {jakartaDateLabel()}
-        </span>
-      </div>
+    <p className="text-muted-foreground">
+      {briefingParts[0].charAt(0).toUpperCase() + briefingParts[0].slice(1)}
+      {briefingParts.length > 1 ? ` — ${briefingParts.slice(1).join(", ")}.` : "."}
+    </p>
+  );
+}
 
-      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-4">
-        <KpiCard
-          label="Active Campaigns"
-          value={<CountUp value={activeCampaigns.length} />}
-          icon={Megaphone}
-          accent="indigo"
-          secondary={
-            newCampaignsThisWeek > 0
-              ? `${newCampaignsThisWeek} started this week`
-              : "None started this week"
-          }
-        />
-        <KpiCard
-          label="Due Today"
-          value={<CountUp value={todaysTasks.length} />}
-          icon={ListTodo}
-          accent="blue"
-          secondary={overdueToday > 0 ? `${overdueToday} overdue` : "All on schedule"}
-        />
-        <KpiCard
-          label="Leads Need Follow-up"
-          value={<CountUp value={followupLeads.length} />}
-          icon={AlarmClock}
-          accent="red"
-          secondary={`${leadSummary.newLast7Days} new lead${leadSummary.newLast7Days === 1 ? "" : "s"} this week`}
-        />
-        <KpiCard
-          label="Budget Used"
-          value={<CountUp value={budgetUsage.percentUsed} suffix="%" />}
-          icon={Wallet}
-          accent="amber"
-          secondary={`${formatIDR(budgetUsage.used)} spent`}
-          sparkline={
-            performanceTrend.budgetSpent.some((v) => v > 0) ? (
-              <Sparkline values={performanceTrend.budgetSpent} colorVar={ACCENT_HEX.amber} />
-            ) : undefined
-          }
-        />
-      </div>
+async function KpiRow({
+  user,
+  budgetPeriod,
+  performanceRange,
+}: {
+  user: User;
+  budgetPeriod: BudgetPeriod;
+  performanceRange: PerformanceRange;
+}) {
+  const [activeCampaigns, todaysTasks, followupLeads, leadSummary, budgetUsage, performanceTrend, newCampaignsThisWeek] =
+    await Promise.all([
+      getActiveCampaigns(),
+      getTodaysTasks(user.id),
+      getLeadsNeedingFollowup(),
+      getLeadSummary(),
+      getBudgetUsage(budgetPeriod),
+      getPerformanceTrend(performanceRange),
+      getNewCampaignsThisWeek(),
+    ]);
 
-      <div className="grid grid-cols-1 gap-4 lg:grid-cols-4">
-        <div className="lg:col-span-2">
-          <CampaignPerformanceWidget trend={performanceTrend} range={performanceRange} />
-        </div>
-        <BudgetUsageWidget usage={budgetUsage} period={budgetPeriod} />
-        <CampaignsByStatusWidget data={campaignsByStatus} />
-      </div>
+  const overdueToday = todaysTasks.filter((t) => t.dueDate && t.dueDate < new Date()).length;
 
-      <div className="grid grid-cols-1 gap-4 lg:grid-cols-3">
-        <FollowupWidget leads={followupLeads} />
-        <LeadSourcesWidget data={leadSources} />
-        <UpcomingTasksWidget tasks={upcomingTasks} completedColumnId={completedColumn?.id ?? null} />
-      </div>
-
-      <div className="grid grid-cols-1 gap-4 lg:grid-cols-3">
-        <div className="lg:col-span-2">
-          <MiniCalendarWidget events={calendarEvents} />
-        </div>
-        <NotificationsWidget notifications={notifications} />
-      </div>
-
-      <RecentActivityWidget entries={recentActivity} />
+  return (
+    <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-4">
+      <KpiCard
+        label="Active Campaigns"
+        value={<CountUp value={activeCampaigns.length} />}
+        icon={Megaphone}
+        accent="indigo"
+        secondary={
+          newCampaignsThisWeek > 0
+            ? `${newCampaignsThisWeek} started this week`
+            : "None started this week"
+        }
+      />
+      <KpiCard
+        label="Due Today"
+        value={<CountUp value={todaysTasks.length} />}
+        icon={ListTodo}
+        accent="blue"
+        secondary={overdueToday > 0 ? `${overdueToday} overdue` : "All on schedule"}
+      />
+      <KpiCard
+        label="Leads Need Follow-up"
+        value={<CountUp value={followupLeads.length} />}
+        icon={AlarmClock}
+        accent="red"
+        secondary={`${leadSummary.newLast7Days} new lead${leadSummary.newLast7Days === 1 ? "" : "s"} this week`}
+      />
+      <KpiCard
+        label="Budget Used"
+        value={<CountUp value={budgetUsage.percentUsed} suffix="%" />}
+        icon={Wallet}
+        accent="amber"
+        secondary={`${formatIDR(budgetUsage.used)} spent`}
+        sparkline={
+          performanceTrend.budgetSpent.some((v) => v > 0) ? (
+            <Sparkline values={performanceTrend.budgetSpent} colorVar={ACCENT_HEX.amber} />
+          ) : undefined
+        }
+      />
     </div>
   );
+}
+
+async function PerformanceRow({
+  budgetPeriod,
+  performanceRange,
+}: {
+  budgetPeriod: BudgetPeriod;
+  performanceRange: PerformanceRange;
+}) {
+  const [performanceTrend, budgetUsage, campaignsByStatus] = await Promise.all([
+    getPerformanceTrend(performanceRange),
+    getBudgetUsage(budgetPeriod),
+    getCampaignsByStatus(),
+  ]);
+
+  return (
+    <div className="grid grid-cols-1 gap-4 lg:grid-cols-4">
+      <div className="lg:col-span-2">
+        <CampaignPerformanceWidget trend={performanceTrend} range={performanceRange} />
+      </div>
+      <BudgetUsageWidget usage={budgetUsage} period={budgetPeriod} />
+      <CampaignsByStatusWidget data={campaignsByStatus} />
+    </div>
+  );
+}
+
+async function LeadsTasksRow({ user }: { user: User }) {
+  const [followupLeads, leadSources, upcomingTasks, boardColumns] = await Promise.all([
+    getLeadsNeedingFollowup(),
+    getLeadSourceBreakdown(),
+    getUpcomingTasks(user.id),
+    listBoardColumns(),
+  ]);
+  const completedColumn = boardColumns.find((c) => c.status === "COMPLETED") ?? null;
+
+  return (
+    <div className="grid grid-cols-1 gap-4 lg:grid-cols-3">
+      <FollowupWidget leads={followupLeads} />
+      <LeadSourcesWidget data={leadSources} />
+      <UpcomingTasksWidget tasks={upcomingTasks} completedColumnId={completedColumn?.id ?? null} />
+    </div>
+  );
+}
+
+async function CalendarNotifRow({ user }: { user: User }) {
+  const [calendarEvents, notifications] = await Promise.all([
+    getCalendarEvents(new Date()),
+    listNotifications(user.id),
+  ]);
+
+  return (
+    <div className="grid grid-cols-1 gap-4 lg:grid-cols-3">
+      <div className="lg:col-span-2">
+        <MiniCalendarWidget events={calendarEvents} />
+      </div>
+      <NotificationsWidget notifications={notifications} />
+    </div>
+  );
+}
+
+async function RecentActivitySection() {
+  const recentActivity = await getRecentActivity();
+  return <RecentActivityWidget entries={recentActivity} />;
 }
