@@ -11,5 +11,9 @@ export async function syncNameAfterInvite(name: string) {
 
   if (!user) throw new Error("Not authenticated");
 
-  await prisma.user.update({ where: { id: user.id }, data: { name } });
+  await prisma.user.upsert({
+    where: { id: user.id },
+    update: { name },
+    create: { id: user.id, email: user.email!, name },
+  });
 }
