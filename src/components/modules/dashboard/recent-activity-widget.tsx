@@ -1,19 +1,10 @@
 import { History } from "lucide-react";
 import { WidgetCard } from "./widget-card";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
-import { formatDate } from "@/lib/format";
+import { formatDate, initials } from "@/lib/format";
 import { describeActivity } from "@/lib/activity-description";
 import { WIDGET_ACCENT } from "@/lib/accent-colors";
 import type { ActivityLog, User } from "@prisma/client";
-
-function initials(name: string) {
-  return name
-    .split(" ")
-    .map((p) => p[0])
-    .slice(0, 2)
-    .join("")
-    .toUpperCase();
-}
 
 /** De-emphasized audit trail — reference material, not an action-driver, so
  * it sits as a compact scrolling strip rather than competing with the

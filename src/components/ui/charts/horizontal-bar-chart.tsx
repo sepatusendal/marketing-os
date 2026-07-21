@@ -36,9 +36,9 @@ export function HorizontalBarChart({ data }: { data: BarDatum[] }) {
             onMouseEnter={() => setHovered(d.key)}
             onMouseLeave={() => setHovered((h) => (h === d.key ? null : h))}
           >
-            <div className="mb-0.5 flex items-center justify-between text-sm">
-              <span className="text-foreground">{d.label}</span>
-              <span className="font-medium text-foreground">{d.valueLabel ?? d.value}</span>
+            <div className="mb-0.5 flex items-center justify-between gap-2 text-sm">
+              <span className="min-w-0 truncate text-foreground">{d.label}</span>
+              <span className="shrink-0 font-medium text-foreground">{d.valueLabel ?? d.value}</span>
             </div>
             <div className="h-2 w-full overflow-hidden rounded-full bg-muted">
               <div

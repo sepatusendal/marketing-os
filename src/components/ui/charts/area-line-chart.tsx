@@ -12,7 +12,11 @@ export type ChartSeries = {
 
 /** Catmull-Rom → cubic Bezier smoothing so lines read as curves, not zig-zags. */
 function smoothPath(points: [number, number][]): string {
-  if (points.length < 2) return "";
+  if (points.length === 0) return "";
+  // A single point has no line to draw — an "M-only" path is valid SVG (the
+  // dot marker below carries the visual), but the naive `L...L...Z` area
+  // path built around an empty linePath is not, so this still needs a stop.
+  if (points.length === 1) return `M${points[0][0]},${points[0][1]}`;
   let d = `M${points[0][0]},${points[0][1]}`;
   for (let i = 0; i < points.length - 1; i++) {
     const p0 = points[i - 1] ?? points[i];
@@ -122,7 +126,13 @@ export function AreaLineChart({
             return (
               <g key={s.key}>
                 <path d={areaPath} fill={`url(#area-fill-${s.key})`} stroke="none" />
-                <path d={linePath} fill="none" stroke={s.colorHex} strokeWidth={2} strokeLinecap="round" strokeLinejoin="round" />
+                {n > 1 ? (
+                  <path d={linePath} fill="none" stroke={s.colorHex} strokeWidth={2} strokeLinecap="round" strokeLinejoin="round" />
+                ) : (
+                  // A single data point has no line to draw — a lone dot
+                  // still needs to carry the value visually.
+                  points[0] && <circle cx={points[0][0]} cy={points[0][1]} r={4} fill={s.colorHex} />
+                )}
               </g>
             );
           })}

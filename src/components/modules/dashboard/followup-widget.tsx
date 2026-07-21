@@ -6,21 +6,13 @@ import { LeadScoreBadge } from "@/components/modules/leads/lead-score-badge";
 import { hoursSinceContact } from "@/lib/lead-followup";
 import { computeLeadScore } from "@/lib/lead-score";
 import { WIDGET_ACCENT } from "@/lib/accent-colors";
+import { initials } from "@/lib/format";
 import type { Lead, User, Campaign } from "@prisma/client";
 
 function agoLabel(hours: number) {
   const days = Math.floor(hours / 24);
   if (days >= 1) return `${days}d overdue`;
   return `${Math.max(1, Math.floor(hours))}h overdue`;
-}
-
-function initials(name: string) {
-  return name
-    .split(" ")
-    .map((p) => p[0])
-    .slice(0, 2)
-    .join("")
-    .toUpperCase();
 }
 
 export function FollowupWidget({

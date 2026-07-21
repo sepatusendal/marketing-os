@@ -31,3 +31,13 @@ export function formatDate(date: Date | string | null | undefined) {
   if (!date) return "—";
   return dateFormatter.format(new Date(date));
 }
+
+/** "Dewi Lestari" → "DL" — avatar-fallback initials, capped at 2 letters. */
+export function initials(name: string) {
+  return name
+    .split(" ")
+    .map((p) => p[0])
+    .slice(0, 2)
+    .join("")
+    .toUpperCase();
+}
