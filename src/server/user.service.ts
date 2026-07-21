@@ -22,6 +22,10 @@ export async function upsertUserFromAuth(authUser: SupabaseAuthUser) {
   });
 }
 
+export async function findUserByEmail(email: string) {
+  return prisma.user.findUnique({ where: { email } });
+}
+
 export async function listActiveUsers() {
   return prisma.user.findMany({
     where: { isActive: true },

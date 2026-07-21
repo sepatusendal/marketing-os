@@ -1,0 +1,35 @@
+name: ci
+
+# Lint + typecheck + build on every PR and every push to main, so PRs get a
+# status check instead of relying on whoever's reviewing to run these
+# locally. Uses placeholder env vars — `prisma generate` and `next build`
+# only need the schema/types to resolve, not a live database connection
+# (every app route is server-rendered per-request, not statically built
+# against real data), so no real Supabase credentials are exposed to CI.
+on:
+  pull_request:
+  push:
+    branches: [main]
+
+env:
+  DATABASE_URL: "postgresql://ci:ci@localhost:5432/ci?schema=public"
+  DIRECT_URL: "postgresql://ci:ci@localhost:5432/ci?schema=public"
+  NEXT_PUBLIC_SUPABASE_URL: "https://ci-placeholder.supabase.co"
+  NEXT_PUBLIC_SUPABASE_ANON_KEY: "ci-placeholder-anon-key"
+  SUPABASE_SERVICE_ROLE_KEY: "ci-placeholder-service-role-key"
+  APP_BASE_URL: "http://localhost:3000"
+
+jobs:
+  lint-typecheck-build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+      - run: npm ci
+      - run: npx prisma generate
+      - run: npm run lint
+      - run: npx tsc --noEmit
+      - run: npm run build
