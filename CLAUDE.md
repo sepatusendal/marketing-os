@@ -1,6 +1,6 @@
 # MarketingOS
 
-Internal marketing team workspace. Full spec lives in `docs/marketingos-prd.md` — read the relevant section before coding.
+Internal marketing team workspace. Full spec lives in `docs/marketingos-prd.md` — read the relevant section before coding. Day-to-day operational docs (deployment, manual config, troubleshooting, backup/disaster recovery) live in `docs/ops/` — start at `docs/ops/README.md`.
 
 ## Stack
 Next.js (App Router) · TypeScript · Tailwind + shadcn/ui · Prisma · Supabase (Postgres/Auth/Storage) · Vercel
