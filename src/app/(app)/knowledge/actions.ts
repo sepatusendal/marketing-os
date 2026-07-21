@@ -1,7 +1,6 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
-import { redirect } from "next/navigation";
 import { requireUser } from "@/lib/auth";
 import { authorize } from "@/lib/rbac";
 import { Role } from "@prisma/client";
@@ -17,6 +16,7 @@ export type ActionState = {
   error?: string;
   fieldErrors?: Record<string, string[]>;
   success?: boolean;
+  articleId?: string;
 };
 
 const MANAGER_ROLES: Role[] = [Role.OWNER, Role.ADMIN, Role.MANAGER];
@@ -42,7 +42,14 @@ export async function createKnowledgeAction(
   });
 
   revalidatePath("/knowledge");
-  redirect(`/knowledge/${article.id}`);
+  // Return success with the new id instead of redirect()-ing here: redirect()
+  // throws internally, so useActionState on the client never observes a
+  // resolved `{success: true}` state, and the create-draft's localStorage
+  // clear (gated on state.success) never fires — the "published" draft then
+  // silently gets offered back as "unsaved work" next time someone opens
+  // the New Article form. Navigating client-side after seeing success: true
+  // fixes both the redirect and the draft cleanup in one path.
+  return { success: true, articleId: article.id };
 }
 
 export async function updateKnowledgeAction(

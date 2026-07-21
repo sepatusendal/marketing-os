@@ -14,7 +14,11 @@ export async function listCommentsForEntity(entityType: EntityType, entityId: st
  * users' names with whitespace stripped, e.g. "@wiraraja" or "@budisantoso".
  */
 export async function parseMentions(body: string) {
-  const tokens = [...body.matchAll(/@([a-zA-Z0-9_]+)/g)].map((m) => m[1].toLowerCase());
+  // Require the "@" to start the string or follow whitespace, so an email
+  // address like "john@example.com" doesn't get read as a mention of
+  // "example" (the "@" there is preceded by a word character, not a
+  // boundary).
+  const tokens = [...body.matchAll(/(?:^|\s)@([a-zA-Z0-9_]+)/g)].map((m) => m[1].toLowerCase());
   if (tokens.length === 0) return [];
 
   const users = await prisma.user.findMany({ where: { isActive: true } });

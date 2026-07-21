@@ -105,3 +105,42 @@ export async function createExpense(input: CreateExpenseInput, createdById: stri
     },
   });
 }
+
+/**
+ * Creates the expense and returns the budget-used total immediately before
+ * and after it, computed inside one transaction that row-locks the campaign
+ * (`SELECT ... FOR UPDATE`). Without the lock, two concurrent expense
+ * submissions on the same campaign each read "before" off a stale snapshot,
+ * which can double-fire the 90%-threshold notification (both see a jump
+ * past 90%) or drop it entirely (neither's own delta looks like a crossing
+ * even though the combined total is). The lock forces the second writer to
+ * wait for the first to commit, so its "before" reading is always accurate.
+ */
+export async function createExpenseWithBudgetLock(
+  input: CreateExpenseInput,
+  createdById: string,
+) {
+  return prisma.$transaction(async (tx) => {
+    await tx.$queryRaw`SELECT id FROM "Campaign" WHERE id = ${input.campaignId} FOR UPDATE`;
+
+    const before = await tx.expense.aggregate({
+      where: { campaignId: input.campaignId },
+      _sum: { amount: true },
+    });
+    const usedBefore = Number(before._sum.amount ?? 0);
+
+    const expense = await tx.expense.create({
+      data: {
+        campaignId: input.campaignId,
+        category: input.category,
+        description: input.description,
+        amount: input.amount,
+        spentAt: new Date(input.spentAt),
+        createdById,
+      },
+    });
+
+    const usedAfter = usedBefore + Number(expense.amount);
+    return { expense, usedBefore, usedAfter };
+  });
+}

@@ -102,6 +102,23 @@ export function authorize(
 }
 
 /**
+ * "user:manage" is granted to both OWNER and ADMIN, but ADMIN must not be
+ * able to grant OWNER or act on an existing OWNER account (role change,
+ * deactivation) — otherwise an ADMIN can self-promote or lock out the
+ * actual owner. Only OWNER may touch OWNER.
+ */
+export function canManageTargetUser(
+  actor: AuthUser,
+  target: { role: Role },
+  nextRole?: Role,
+): boolean {
+  if (actor.role === OWNER) return true;
+  if (target.role === OWNER) return false;
+  if (nextRole === OWNER) return false;
+  return true;
+}
+
+/**
  * Throws if the check fails. Use in server actions/route handlers to short
  * circuit with a clear error instead of silently no-op-ing.
  */

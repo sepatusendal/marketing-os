@@ -4,12 +4,10 @@ import { revalidatePath } from "next/cache";
 import { requireUser } from "@/lib/auth";
 import { authorize } from "@/lib/rbac";
 import { logActivity } from "@/server/activity.service";
-import { createExpense, getCampaignBudgetUsed } from "@/server/expense.service";
+import { createExpenseWithBudgetLock } from "@/server/expense.service";
 import { getCampaign } from "@/server/campaign.service";
-import { createNotification } from "@/server/notification.service";
 import { createExpenseSchema } from "@/lib/schemas/expense";
-
-const BUDGET_ALERT_THRESHOLD = 90;
+import { notifyIfBudgetCrossedThreshold } from "@/server/budget-alert.service";
 
 export type ActionState = {
   error?: string;
@@ -30,9 +28,10 @@ export async function createExpenseAction(
   if (!parsed.success) return { fieldErrors: parsed.error.flatten().fieldErrors };
 
   const campaign = await getCampaign(parsed.data.campaignId);
-  const usedBefore = campaign ? await getCampaignBudgetUsed(campaign.id) : 0;
-
-  const expense = await createExpense(parsed.data, user.id);
+  const { expense, usedBefore, usedAfter } = await createExpenseWithBudgetLock(
+    parsed.data,
+    user.id,
+  );
   await logActivity({
     actorId: user.id,
     entityType: "EXPENSE",
@@ -45,20 +44,7 @@ export async function createExpenseAction(
   // mark, rather than requiring anyone to check the budget page proactively.
   if (campaign) {
     const allocated = Number(campaign.budgetAllocated);
-    if (allocated > 0) {
-      const percentBefore = (usedBefore / allocated) * 100;
-      const usedAfter = usedBefore + Number(expense.amount);
-      const percentAfter = (usedAfter / allocated) * 100;
-      if (percentBefore < BUDGET_ALERT_THRESHOLD && percentAfter >= BUDGET_ALERT_THRESHOLD) {
-        await createNotification({
-          userId: campaign.ownerId,
-          type: "campaign_budget_alert",
-          message: `"${campaign.name}" has used ${Math.round(percentAfter)}% of its budget`,
-          entityType: "CAMPAIGN",
-          entityId: campaign.id,
-        });
-      }
-    }
+    await notifyIfBudgetCrossedThreshold(campaign, allocated, usedBefore, allocated, usedAfter);
   }
 
   revalidatePath("/budget");

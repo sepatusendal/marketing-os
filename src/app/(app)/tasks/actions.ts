@@ -113,6 +113,9 @@ export async function updateTaskAction(
 
   revalidatePath("/tasks");
   if (task.campaignId) revalidatePath(`/campaigns/${task.campaignId}`);
+  if (existing.campaignId && existing.campaignId !== task.campaignId) {
+    revalidatePath(`/campaigns/${existing.campaignId}`);
+  }
   return { success: true };
 }
 
@@ -130,6 +133,9 @@ export async function updateTaskColumnAction(input: unknown): Promise<ActionStat
   }
 
   const task = await updateTaskColumn(id, columnId);
+  if (!task) {
+    return { error: "That column no longer exists — refresh the board and try again." };
+  }
   await logActivity({
     actorId: user.id,
     entityType: "TASK",
@@ -145,11 +151,14 @@ export async function updateTaskColumnAction(input: unknown): Promise<ActionStat
 
 export async function updateTaskLabelsAction(input: unknown): Promise<ActionState> {
   const user = await requireUser();
-  if (!authorize(user, "task:create")) {
-    return { error: "You don't have permission to edit tasks." };
-  }
   const parsed = updateTaskLabelsSchema.safeParse(input);
   if (!parsed.success) return { error: "Invalid labels." };
+
+  const existing = await getTask(parsed.data.id);
+  if (!existing) return { error: "Task not found." };
+  if (!authorize(user, "task:update_status_self", { assigneeId: existing.assigneeId })) {
+    return { error: "You don't have permission to edit this task." };
+  }
 
   const task = await updateTaskLabels(parsed.data.id, parsed.data.labels);
   await logActivity({
@@ -166,11 +175,14 @@ export async function updateTaskLabelsAction(input: unknown): Promise<ActionStat
 
 export async function createChecklistItemAction(input: unknown): Promise<ActionState> {
   const user = await requireUser();
-  if (!authorize(user, "task:create")) {
-    return { error: "You don't have permission to edit tasks." };
-  }
   const parsed = createChecklistItemSchema.safeParse(input);
   if (!parsed.success) return { error: "Invalid checklist item." };
+
+  const existing = await getTask(parsed.data.taskId);
+  if (!existing) return { error: "Task not found." };
+  if (!authorize(user, "task:update_status_self", { assigneeId: existing.assigneeId })) {
+    return { error: "You don't have permission to edit this task." };
+  }
 
   const item = await addChecklistItem(parsed.data.taskId, parsed.data.label);
   await logActivity({
@@ -186,11 +198,16 @@ export async function createChecklistItemAction(input: unknown): Promise<ActionS
 
 export async function toggleChecklistItemAction(input: unknown): Promise<ActionState> {
   const user = await requireUser();
-  if (!authorize(user, "task:create")) {
-    return { error: "You don't have permission to edit tasks." };
-  }
   const parsed = toggleChecklistItemSchema.safeParse(input);
   if (!parsed.success) return { error: "Invalid checklist item." };
+
+  const taskId = await getChecklistItemTaskId(parsed.data.id);
+  if (!taskId) return { error: "Checklist item not found." };
+  const existing = await getTask(taskId);
+  if (!existing) return { error: "Task not found." };
+  if (!authorize(user, "task:update_status_self", { assigneeId: existing.assigneeId })) {
+    return { error: "You don't have permission to edit this task." };
+  }
 
   const item = await toggleChecklistItem(parsed.data.id, parsed.data.isDone);
   await logActivity({
@@ -206,14 +223,16 @@ export async function toggleChecklistItemAction(input: unknown): Promise<ActionS
 
 export async function deleteChecklistItemAction(input: unknown): Promise<ActionState> {
   const user = await requireUser();
-  if (!authorize(user, "task:create")) {
-    return { error: "You don't have permission to edit tasks." };
-  }
   const parsed = deleteChecklistItemSchema.safeParse(input);
   if (!parsed.success) return { error: "Invalid checklist item." };
 
   const taskId = await getChecklistItemTaskId(parsed.data.id);
   if (!taskId) return { error: "Checklist item not found." };
+  const existing = await getTask(taskId);
+  if (!existing) return { error: "Task not found." };
+  if (!authorize(user, "task:update_status_self", { assigneeId: existing.assigneeId })) {
+    return { error: "You don't have permission to edit this task." };
+  }
 
   await deleteChecklistItem(parsed.data.id);
   await logActivity({
@@ -285,13 +304,13 @@ export async function deleteBoardColumnAction(input: unknown): Promise<ActionSta
   const parsed = deleteBoardColumnSchema.safeParse(input);
   if (!parsed.success) return { error: "Invalid column id." };
 
+  await deleteBoardColumn(parsed.data.id);
   await logActivity({
     actorId: user.id,
     entityType: "BOARD_COLUMN",
     entityId: parsed.data.id,
     action: "deleted",
   });
-  await deleteBoardColumn(parsed.data.id);
   revalidatePath("/tasks");
   revalidatePath("/settings/board");
   return { success: true };

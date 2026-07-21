@@ -18,6 +18,8 @@ import {
   updateCampaignStatusSchema,
 } from "@/lib/schemas/campaign";
 import { isValidTransition } from "@/lib/campaign-status";
+import { getCampaignBudgetUsed } from "@/server/expense.service";
+import { notifyIfBudgetCrossedThreshold } from "@/server/budget-alert.service";
 
 export type ActionState = {
   error?: string;
@@ -90,13 +92,23 @@ export async function updateCampaignAction(
     return { fieldErrors: parsed.error.flatten().fieldErrors };
   }
 
-  await updateCampaign(parsed.data);
+  const updated = await updateCampaign(parsed.data);
   await logActivity({
     actorId: user.id,
     entityType: "CAMPAIGN",
     entityId: id,
     action: "updated",
   });
+
+  // Lowering budgetAllocated can push usage past the 90% alert threshold
+  // with no expense ever added — the expense-add path can't catch that, so
+  // check it here too whenever the allocation itself changes.
+  const allocatedBefore = Number(existing.budgetAllocated);
+  const allocatedAfter = Number(updated.budgetAllocated);
+  if (allocatedBefore !== allocatedAfter) {
+    const used = await getCampaignBudgetUsed(id);
+    await notifyIfBudgetCrossedThreshold(updated, allocatedBefore, used, allocatedAfter, used);
+  }
 
   revalidatePath(`/campaigns/${id}`);
   revalidatePath("/campaigns");

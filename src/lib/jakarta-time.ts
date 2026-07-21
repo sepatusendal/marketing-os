@@ -43,6 +43,11 @@ export function jakartaStartOfMonth(date: Date): Date {
   return new Date(Date.UTC(year, month, 1, 0, 0, 0) - JAKARTA_OFFSET_MS);
 }
 
+/** The UTC instant of the last millisecond of the Jakarta calendar day `date` falls on there. */
+export function jakartaEndOfDay(date: Date): Date {
+  return new Date(jakartaStartOfDay(date).getTime() + 24 * 60 * 60 * 1000 - 1);
+}
+
 /** Jakarta calendar days from `start` to `end`, inclusive, as UTC instants of each day's Jakarta midnight. */
 export function jakartaDayRange(start: Date, end: Date): Date[] {
   const days: Date[] = [];

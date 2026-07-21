@@ -30,6 +30,7 @@ export default async function KnowledgeArticlePage({
       <div className="max-w-2xl space-y-4">
         <h1 className="text-2xl font-semibold">Edit Article</h1>
         <KnowledgeForm
+          key={article.id}
           mode="edit"
           article={{
             id: article.id,

@@ -1,5 +1,11 @@
 function escapeCsvCell(value: unknown): string {
-  const str = value == null ? "" : String(value);
+  let str = value == null ? "" : String(value);
+  // Formula injection: a cell opening with =, +, -, @, tab, or CR is
+  // interpreted as a formula by Excel/Sheets/Numbers when the CSV is
+  // opened. Prefixing with an apostrophe forces text interpretation.
+  if (/^[=+\-@\t\r]/.test(str)) {
+    str = `'${str}`;
+  }
   if (/[",\n]/.test(str)) {
     return `"${str.replace(/"/g, '""')}"`;
   }

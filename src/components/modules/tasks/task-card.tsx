@@ -5,6 +5,7 @@ import { PriorityBadge } from "@/components/modules/campaigns/status-badge";
 import { formatDate } from "@/lib/format";
 import { cn } from "@/lib/utils";
 import { TASK_LABEL_HEX, type TaskLabelColor } from "@/lib/task-labels";
+import { jakartaEndOfDay } from "@/lib/jakarta-time";
 import { ACCENT_BORDER, ACCENT_WASH, PRIORITY_ACCENT } from "@/lib/accent-colors";
 import type { Task, User, Campaign, BoardColumn, TaskChecklistItem, Asset } from "@prisma/client";
 
@@ -26,7 +27,9 @@ export function TaskCard({
   onOpen: (task: TaskWithRelations) => void;
 }) {
   const isOverdue =
-    task.dueDate && task.status !== "COMPLETED" && new Date(task.dueDate) < new Date();
+    task.dueDate &&
+    task.status !== "COMPLETED" &&
+    jakartaEndOfDay(new Date(task.dueDate)) < new Date();
   const doneCount = task.checklistItems.filter((i) => i.isDone).length;
   const accent = PRIORITY_ACCENT[task.priority];
 

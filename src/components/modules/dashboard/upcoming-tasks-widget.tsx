@@ -9,14 +9,13 @@ import { formatDate } from "@/lib/format";
 import { cn } from "@/lib/utils";
 import { WIDGET_ACCENT, ACCENT_CHIP, PRIORITY_ACCENT } from "@/lib/accent-colors";
 import { updateTaskColumnAction } from "@/app/(app)/tasks/actions";
+import { jakartaStartOfDay } from "@/lib/jakarta-time";
 import type { Task, BoardColumn } from "@prisma/client";
 
 function dueLabel(date: Date) {
-  const today = new Date();
-  today.setHours(0, 0, 0, 0);
-  const d = new Date(date);
-  d.setHours(0, 0, 0, 0);
-  const diffDays = Math.round((d.getTime() - today.getTime()) / 86400000);
+  const todayStart = jakartaStartOfDay(new Date());
+  const dueStart = jakartaStartOfDay(new Date(date));
+  const diffDays = Math.round((dueStart.getTime() - todayStart.getTime()) / 86400000);
   if (diffDays === 0) return "Today";
   if (diffDays === 1) return "Tomorrow";
   if (diffDays < 0) return `${formatDate(date)} (overdue)`;

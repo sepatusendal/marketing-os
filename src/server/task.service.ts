@@ -57,10 +57,15 @@ export async function getTask(id: string) {
 }
 
 export async function createTask(input: CreateTaskInput) {
-  const defaultColumn = await prisma.boardColumn.findFirst({
-    where: { status: "TODO" },
-    orderBy: { position: "asc" },
-  });
+  // Fall back to the first column by position if none maps to TODO (e.g. the
+  // board's been reconfigured without a TODO-mapped column) — a null
+  // columnId makes the task invisible on every kanban view (it matches no
+  // column's filter), so it must always land somewhere.
+  const defaultColumn =
+    (await prisma.boardColumn.findFirst({
+      where: { status: "TODO" },
+      orderBy: { position: "asc" },
+    })) ?? (await prisma.boardColumn.findFirst({ orderBy: { position: "asc" } }));
 
   return prisma.task.create({
     data: {
@@ -95,7 +100,8 @@ export async function updateTask(input: UpdateTaskInput) {
  * so dashboard/report aggregates (which key off Task.status) never drift
  * from what the board visually shows. */
 export async function updateTaskColumn(id: string, columnId: string) {
-  const column = await prisma.boardColumn.findUniqueOrThrow({ where: { id: columnId } });
+  const column = await prisma.boardColumn.findUnique({ where: { id: columnId } });
+  if (!column) return null;
   return prisma.task.update({
     where: { id },
     data: { columnId, status: column.status },

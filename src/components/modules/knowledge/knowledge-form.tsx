@@ -1,6 +1,7 @@
 "use client";
 
 import { useActionState, useEffect, useState } from "react";
+import { useRouter } from "next/navigation";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -54,6 +55,7 @@ export function KnowledgeForm({
   defaultCampaignId?: string;
   defaultType?: string;
 }) {
+  const router = useRouter();
   const action = mode === "create" ? createKnowledgeAction : updateKnowledgeAction;
   const [state, formAction, pending] = useActionState<ActionState, FormData>(action, {});
 
@@ -89,7 +91,12 @@ export function KnowledgeForm({
 
   useEffect(() => {
     if (state.success) {
-      if (mode === "create") localStorage.removeItem(DRAFT_KEY);
+      if (mode === "create") {
+        localStorage.removeItem(DRAFT_KEY);
+        toast.success("Article published");
+        if (state.articleId) router.push(`/knowledge/${state.articleId}`);
+        return;
+      }
       toast.success("Article saved");
     }
     if (state.error) toast.error(state.error);

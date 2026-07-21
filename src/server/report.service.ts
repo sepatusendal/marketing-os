@@ -1,5 +1,6 @@
 import { prisma } from "@/lib/prisma";
 import { getBudgetUsedMap } from "@/server/expense.service";
+import { jakartaStartOfDay, jakartaEndOfDay } from "@/lib/jakarta-time";
 import type { LeadSource, LeadStatus } from "@prisma/client";
 
 export async function getCampaignPerformanceReport() {
@@ -35,8 +36,8 @@ export async function getLeadFunnelReport(range: ReportDateRange = {}) {
     ...(range.dateFrom || range.dateTo
       ? {
           createdAt: {
-            ...(range.dateFrom ? { gte: new Date(range.dateFrom) } : {}),
-            ...(range.dateTo ? { lte: new Date(range.dateTo) } : {}),
+            ...(range.dateFrom ? { gte: jakartaStartOfDay(new Date(range.dateFrom)) } : {}),
+            ...(range.dateTo ? { lte: jakartaEndOfDay(new Date(range.dateTo)) } : {}),
           },
         }
       : {}),
@@ -69,8 +70,8 @@ export async function getBudgetByCategoryReport(range: ReportDateRange = {}) {
       ...(range.dateFrom || range.dateTo
         ? {
             spentAt: {
-              ...(range.dateFrom ? { gte: new Date(range.dateFrom) } : {}),
-              ...(range.dateTo ? { lte: new Date(range.dateTo) } : {}),
+              ...(range.dateFrom ? { gte: jakartaStartOfDay(new Date(range.dateFrom)) } : {}),
+              ...(range.dateTo ? { lte: jakartaEndOfDay(new Date(range.dateTo)) } : {}),
             },
           }
         : {}),

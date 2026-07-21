@@ -196,6 +196,22 @@ export async function updateLeadStatusAction(input: unknown): Promise<ActionStat
       entityId: task.id,
     });
     revalidatePath("/tasks");
+  } else if (parsed.data.status === "WON" && existing.status !== "WON" && !lead.ownerId) {
+    // No owner to assign the onboarding task to — surface the gap instead
+    // of silently skipping the automation, so it doesn't just get lost.
+    await logActivity({
+      actorId: user.id,
+      entityType: "LEAD",
+      entityId: lead.id,
+      action: "onboarding_task_skipped_no_owner",
+    });
+    await createNotification({
+      userId: user.id,
+      type: "lead_won_needs_owner",
+      message: `"${lead.name}" was won but has no owner — no onboarding task was created. Assign an owner and create one manually.`,
+      entityType: "LEAD",
+      entityId: lead.id,
+    });
   }
 
   revalidatePath("/leads");

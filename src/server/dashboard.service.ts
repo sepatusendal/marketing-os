@@ -5,11 +5,10 @@ import {
   endOfMonth,
   startOfQuarter,
   subDays,
-  endOfDay,
 } from "date-fns";
 import type { CampaignStatus, LeadStatus, LeadSource } from "@prisma/client";
 import { FOLLOWUP_SLA_HOURS } from "@/lib/lead-followup";
-import { jakartaDayKey, jakartaDayLabel, jakartaStartOfDay, jakartaStartOfMonth, jakartaDayRange } from "@/lib/jakarta-time";
+import { jakartaDayKey, jakartaDayLabel, jakartaStartOfDay, jakartaStartOfMonth, jakartaDayRange, jakartaEndOfDay } from "@/lib/jakarta-time";
 
 // Wrapped in React's cache() so the dashboard's Suspense-streamed sections
 // can each request the same data independently without re-querying the
@@ -71,7 +70,7 @@ export const getTodaysTasks = cache(async function getTodaysTasks(userId: string
     where: {
       assigneeId: userId,
       status: { not: "COMPLETED" },
-      dueDate: { lte: endOfDay(new Date()) },
+      dueDate: { lte: jakartaEndOfDay(new Date()) },
     },
     include: { campaign: { select: { id: true, name: true } }, assignee: true },
     orderBy: { dueDate: "asc" },
@@ -97,7 +96,14 @@ export const getLeadSummary = cache(async function getLeadSummary() {
 });
 
 /** Active leads not contacted within the follow-up SLA window (48h) — see lib/lead-followup.ts. */
-export const getLeadsNeedingFollowup = cache(async function getLeadsNeedingFollowup() {
+// `limit` defaults to 10 for the dashboard widget's display purposes only —
+// pass `null` explicitly for consumers (like the follow-up notification
+// trigger) that must see every overdue lead, not just the 10 most-stale.
+// (A default parameter only kicks in for `undefined`, not `null`, so `null`
+// is the sentinel that actually reaches the query as "no limit".)
+export const getLeadsNeedingFollowup = cache(async function getLeadsNeedingFollowup(
+  limit: number | null = 10,
+) {
   const slaThreshold = new Date(Date.now() - FOLLOWUP_SLA_HOURS * 60 * 60 * 1000);
 
   return prisma.lead.findMany({
@@ -110,7 +116,7 @@ export const getLeadsNeedingFollowup = cache(async function getLeadsNeedingFollo
     },
     include: { owner: true, campaign: { select: { id: true, name: true } } },
     orderBy: { lastContactAt: "asc" },
-    take: 10,
+    take: limit ?? undefined,
   });
 });
 

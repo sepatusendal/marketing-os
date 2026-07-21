@@ -1,22 +1,32 @@
 import { prisma } from "@/lib/prisma";
-import type { EntityType } from "@prisma/client";
+import type { EntityType, Prisma } from "@prisma/client";
 import { sendNotificationEmail } from "@/lib/email";
+
+type PrismaClientOrTx = typeof prisma | Prisma.TransactionClient;
 
 /**
  * Single hook point for both in-app and email notifications (PRD D10, amended:
  * notifications are in-app plus email). Every existing call site (task
  * assignment, @mention, lead-won, budget threshold) gets email for free.
+ *
+ * Accepts an optional transaction client so callers that need the row
+ * creation itself to participate in a lock/transaction (e.g. the follow-up
+ * dedup check) still go through this single hook rather than re-implementing
+ * the email step.
  */
-export async function createNotification(params: {
-  userId: string;
-  type: string;
-  message: string;
-  entityType?: EntityType;
-  entityId?: string;
-}) {
-  const notification = await prisma.notification.create({ data: params });
+export async function createNotification(
+  params: {
+    userId: string;
+    type: string;
+    message: string;
+    entityType?: EntityType;
+    entityId?: string;
+  },
+  db: PrismaClientOrTx = prisma,
+) {
+  const notification = await db.notification.create({ data: params });
 
-  const user = await prisma.user.findUnique({
+  const user = await db.user.findUnique({
     where: { id: params.userId },
     select: { email: true, emailNotifications: true },
   });
