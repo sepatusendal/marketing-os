@@ -1,6 +1,7 @@
 "use client";
 
 import { Suspense, useState } from "react";
+import Image from "next/image";
 import { useRouter, useSearchParams } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
 import { Button } from "@/components/ui/button";
@@ -70,7 +71,15 @@ function LoginForm() {
 
   return (
     <Card className="w-full max-w-sm">
-      <CardHeader>
+      <CardHeader className="items-center justify-items-center text-center">
+        <Image
+          src="/logo-nufa.png"
+          alt="Nufa Global Education"
+          width={168}
+          height={48}
+          priority
+          className="animate-brand-entrance mx-auto mb-1 h-auto w-[168px]"
+        />
         <CardTitle>MarketingOS</CardTitle>
         <CardDescription>
           Sign in with your invited account. Public signup is disabled.
@@ -115,11 +124,18 @@ function LoginForm() {
         <Button
           type="button"
           variant="outline"
-          className="w-full"
+          className="w-full gap-2"
           disabled={googleLoading}
           onClick={handleGoogleSignIn}
         >
-          {googleLoading ? "Redirecting..." : "Continue with Google"}
+          {googleLoading ? (
+            "Redirecting..."
+          ) : (
+            <>
+              <Image src="/google-icon.webp" alt="" width={16} height={16} className="h-4 w-4" />
+              Continue with Google
+            </>
+          )}
         </Button>
       </CardContent>
     </Card>

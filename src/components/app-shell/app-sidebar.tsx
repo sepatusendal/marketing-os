@@ -1,17 +1,16 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import Link from "next/link";
-import { usePathname } from "next/navigation";
+import Image from "next/image";
 import { cn } from "@/lib/utils";
-import { NAV_ITEMS } from "@/config/nav";
 import { Button } from "@/components/ui/button";
 import { PanelLeftClose, PanelLeftOpen } from "lucide-react";
+import type { Role } from "@prisma/client";
+import { NavItems } from "./nav-items";
 
 const COLLAPSE_KEY = "marketingos:sidebar-collapsed";
 
-export function AppSidebar() {
-  const pathname = usePathname();
+export function AppSidebar({ role }: { role: Role }) {
   const [collapsed, setCollapsed] = useState(false);
 
   // Reading the persisted preference is inherently a client-only, post-mount
@@ -43,8 +42,17 @@ export function AppSidebar() {
         )}
       >
         {!collapsed && (
-          <span className="truncate font-heading text-[15px] font-semibold tracking-tight">
-            MarketingOS
+          <span className="flex min-w-0 items-center gap-2">
+            <Image
+              src="/logo-nufa.png"
+              alt="Nufa Global Education"
+              width={84}
+              height={24}
+              className="h-6 w-auto shrink-0"
+            />
+            <span className="truncate font-heading text-[15px] font-semibold tracking-tight">
+              MarketingOS
+            </span>
           </span>
         )}
         <Button
@@ -62,34 +70,7 @@ export function AppSidebar() {
         </Button>
       </div>
 
-      <nav className="flex flex-1 flex-col gap-0.5 p-2.5">
-        {NAV_ITEMS.map((item) => {
-          const isActive =
-            pathname === item.href || pathname.startsWith(`${item.href}/`);
-          const Icon = item.icon;
-
-          return (
-            <Link
-              key={item.href}
-              href={item.href}
-              title={collapsed ? item.label : undefined}
-              className={cn(
-                "group relative flex items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium transition-colors",
-                collapsed && "justify-center px-0",
-                isActive
-                  ? "bg-sidebar-accent text-sidebar-accent-foreground"
-                  : "text-sidebar-foreground/70 hover:bg-sidebar-accent/60 hover:text-sidebar-foreground",
-              )}
-            >
-              {isActive && (
-                <span className="absolute left-0 h-4 w-0.5 rounded-full bg-sidebar-primary" />
-              )}
-              <Icon className="h-4 w-4 shrink-0" />
-              {!collapsed && <span className="truncate">{item.label}</span>}
-            </Link>
-          );
-        })}
-      </nav>
+      <NavItems role={role} collapsed={collapsed} />
 
       <div
         className={cn(
@@ -100,7 +81,17 @@ export function AppSidebar() {
         {collapsed ? (
           <span title="Built with care by Nufa Global">♥</span>
         ) : (
-          <span>Built with care by Nufa Global</span>
+          <>
+            <span>Built with care by Nufa Global</span>
+            <a
+              href="https://github.com/sepatusendal"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="mt-0.5 block text-[10px] text-sidebar-foreground/30 hover:text-sidebar-foreground/60"
+            >
+              Built by @sepatusendal
+            </a>
+          </>
         )}
       </div>
     </aside>

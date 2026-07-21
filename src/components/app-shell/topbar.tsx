@@ -9,18 +9,20 @@ import { ThemeToggle } from "./theme-toggle";
 import { UserMenu } from "./user-menu";
 import { NotificationBell } from "./notification-bell";
 import { notificationHref } from "@/lib/notification-href";
-import type { Notification } from "@prisma/client";
+import type { Notification, Role } from "@prisma/client";
 
 export function Topbar({
   name,
   email,
   avatarUrl,
+  role,
   notifications,
   unreadCount,
 }: {
   name: string;
   email: string;
   avatarUrl?: string | null;
+  role: Role;
   notifications: Notification[];
   unreadCount: number;
 }) {
@@ -48,7 +50,7 @@ export function Topbar({
           <div className="flex h-14 items-center border-b border-sidebar-border px-4 font-heading text-[15px] font-semibold tracking-tight">
             MarketingOS
           </div>
-          <SidebarNav />
+          <SidebarNav role={role} />
           <div className="border-t border-sidebar-border px-3 py-3 text-center text-xs text-sidebar-foreground/40">
             Built with care by Nufa Global
           </div>

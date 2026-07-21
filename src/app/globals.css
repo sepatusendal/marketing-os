@@ -218,6 +218,26 @@
   }
 }
 
+/* Popups (Select, DropdownMenu) float over arbitrary page content with no
+   dimming overlay behind them, unlike Dialog/Sheet — so they need a denser
+   tint than .glass-panel to stay legible instead of "ketiban" by whatever's
+   underneath. */
+.glass-panel-solid {
+  background-color: var(--popover);
+  background-color: color-mix(in oklch, var(--glass-tint) 96%, transparent);
+  border-color: color-mix(in oklch, var(--foreground) 10%, transparent);
+  box-shadow:
+    inset 0 1px 0 0 var(--glass-highlight),
+    0 8px 30px -12px oklch(0 0 0 / 0.35);
+}
+
+@supports (backdrop-filter: blur(1px)) or (-webkit-backdrop-filter: blur(1px)) {
+  .glass-panel-solid {
+    backdrop-filter: blur(24px) saturate(160%);
+    -webkit-backdrop-filter: blur(24px) saturate(160%);
+  }
+}
+
 @keyframes bell-ring {
   0%, 100% { transform: rotate(0deg); }
   15% { transform: rotate(14deg); }
@@ -225,4 +245,27 @@
   45% { transform: rotate(9deg); }
   60% { transform: rotate(-6deg); }
   75% { transform: rotate(3deg); }
+}
+
+/* Login screen brand mark: fades/scales in once on load, settling into a
+   soft ambient glow rather than a distracting loop. */
+@keyframes brand-entrance {
+  0% {
+    opacity: 0;
+    transform: scale(0.92);
+    filter: drop-shadow(0 0 0 transparent);
+  }
+  60% {
+    opacity: 1;
+    transform: scale(1.02);
+  }
+  100% {
+    opacity: 1;
+    transform: scale(1);
+    filter: drop-shadow(0 0 22px color-mix(in oklch, var(--primary) 45%, transparent));
+  }
+}
+
+.animate-brand-entrance {
+  animation: brand-entrance 1.1s cubic-bezier(0.16, 1, 0.3, 1) forwards;
 }

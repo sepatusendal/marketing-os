@@ -26,13 +26,14 @@ export default async function AppLayout({
     <div className="flex min-h-screen">
       <CommandPalette />
       <FollowupChecker />
-      <AppSidebar />
+      <AppSidebar role={user.role} />
 
       <div className="flex min-w-0 flex-1 flex-col">
         <Topbar
           name={user.name}
           email={user.email}
           avatarUrl={user.avatarUrl}
+          role={user.role}
           notifications={notifications}
           unreadCount={unreadCount}
         />
