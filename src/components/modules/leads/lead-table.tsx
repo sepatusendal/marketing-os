@@ -13,7 +13,7 @@ import {
 } from "@/components/ui/table";
 import { ArrowUpDown } from "lucide-react";
 import { formatDate, formatIDR } from "@/lib/format";
-import { EmptyIllustration } from "@/components/ui/empty-illustration";
+import { EmptyInboxIllustration } from "@/components/ui/empty-illustration";
 import { getLeadStaleness } from "@/lib/lead-followup";
 import { computeLeadScore } from "@/lib/lead-score";
 import { LeadScoreBadge } from "./lead-score-badge";
@@ -65,7 +65,7 @@ export function LeadTable({
 
       {leads.length === 0 ? (
         <div className="flex flex-col items-center gap-3 rounded-lg border border-dashed p-12 text-center text-muted-foreground">
-          <EmptyIllustration className="h-24 w-32" />
+          <EmptyInboxIllustration className="h-24 w-32" />
           <p>No leads match these filters.</p>
         </div>
       ) : (
