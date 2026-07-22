@@ -47,15 +47,34 @@ export async function inviteUserAction(email: string): Promise<ActionState> {
   }
   if (!email.trim()) return { error: "Email is required." };
 
-  const supabase = createAdminClient();
+  let supabase;
+  try {
+    supabase = createAdminClient();
+  } catch (err) {
+    return { error: err instanceof Error ? err.message : "Supabase admin client misconfigured." };
+  }
+
   // Redirect to "/" rather than straight to "/invite/accept": the invite
   // link carries the session as a URL hash fragment, which only the root
   // page's client-side handler parses (@supabase/ssr's browser client only
   // auto-detects a "?code=" query param, not a hash) — landing directly on
   // /invite/accept left it checking for a session that was never applied.
-  const { error } = await supabase.auth.admin.inviteUserByEmail(email.trim(), {
-    redirectTo: `${process.env.APP_BASE_URL}/`,
-  });
+  let error;
+  try {
+    ({ error } = await supabase.auth.admin.inviteUserByEmail(email.trim(), {
+      redirectTo: `${process.env.APP_BASE_URL}/`,
+    }));
+  } catch (err) {
+    // The Supabase SDK throws a raw fetch-level TypeError (not its usual
+    // AuthError) when a header value is malformed — e.g. a non-ASCII
+    // character in an env var — so it never reaches the `error` branch above.
+    return {
+      error:
+        err instanceof Error
+          ? `Invite failed: ${err.message}. Check APP_BASE_URL and Supabase env vars for stray characters.`
+          : "Invite failed unexpectedly.",
+    };
+  }
 
   if (error) return { error: error.message };
 
