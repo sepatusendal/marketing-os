@@ -3,7 +3,7 @@
 import { useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
-import { Upload } from "lucide-react";
+import { Upload, FileUp, ClipboardPaste, FileSpreadsheet, X, CheckCircle2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
   Dialog,
@@ -31,18 +31,36 @@ export function LeadImportDialog() {
   const [pasteText, setPasteText] = useState("");
   const [importing, setImporting] = useState(false);
   const [result, setResult] = useState<ImportResult | null>(null);
+  const [dragActive, setDragActive] = useState(false);
 
   function loadRowsFromText(text: string) {
     const parsed = parseCsvToObjects(text) as ImportRow[];
     setRows(parsed.filter((r) => r.name?.trim()));
   }
 
-  function handleFileChange(e: React.ChangeEvent<HTMLInputElement>) {
-    const file = e.target.files?.[0];
-    if (!file) return;
+  function loadFile(file: File) {
     setFileName(file.name);
     setResult(null);
     file.text().then(loadRowsFromText);
+  }
+
+  function handleFileChange(e: React.ChangeEvent<HTMLInputElement>) {
+    const file = e.target.files?.[0];
+    if (file) loadFile(file);
+  }
+
+  function handleDrop(e: React.DragEvent<HTMLLabelElement>) {
+    e.preventDefault();
+    setDragActive(false);
+    const file = e.dataTransfer.files?.[0];
+    if (file) loadFile(file);
+  }
+
+  function clearFile() {
+    setFileName("");
+    setRows([]);
+    setResult(null);
+    if (fileInputRef.current) fileInputRef.current.value = "";
   }
 
   function handlePasteChange(e: React.ChangeEvent<HTMLTextAreaElement>) {
@@ -76,6 +94,7 @@ export function LeadImportDialog() {
       setPasteText("");
       setResult(null);
       setMode("file");
+      setDragActive(false);
       if (fileInputRef.current) fileInputRef.current.value = "";
     }
   }
@@ -95,39 +114,89 @@ export function LeadImportDialog() {
           </DialogDescription>
         </DialogHeader>
 
-        <div className="flex gap-1 rounded-md border p-0.5 text-sm">
+        <div className="grid grid-cols-2 gap-1.5 rounded-lg border bg-muted/30 p-1">
           <button
             type="button"
             onClick={() => setMode("file")}
             className={cn(
-              "flex-1 rounded px-3 py-1",
-              mode === "file" ? "bg-secondary" : "text-muted-foreground",
+              "flex cursor-pointer items-center justify-center gap-1.5 rounded-md px-3 py-1.5 text-sm font-medium transition-all",
+              mode === "file"
+                ? "bg-background text-foreground shadow-sm"
+                : "text-muted-foreground hover:bg-background/60 hover:text-foreground",
             )}
           >
+            <FileUp className="h-3.5 w-3.5" />
             Upload CSV file
           </button>
           <button
             type="button"
             onClick={() => setMode("paste")}
             className={cn(
-              "flex-1 rounded px-3 py-1",
-              mode === "paste" ? "bg-secondary" : "text-muted-foreground",
+              "flex cursor-pointer items-center justify-center gap-1.5 rounded-md px-3 py-1.5 text-sm font-medium transition-all",
+              mode === "paste"
+                ? "bg-background text-foreground shadow-sm"
+                : "text-muted-foreground hover:bg-background/60 hover:text-foreground",
             )}
           >
+            <ClipboardPaste className="h-3.5 w-3.5" />
             Paste from Sheets
           </button>
         </div>
 
         {mode === "file" ? (
-          <input
-            ref={fileInputRef}
-            type="file"
-            accept=".csv,text/csv"
-            onChange={handleFileChange}
-            className="text-sm"
-          />
+          fileName ? (
+            <div className="flex items-center gap-3 rounded-lg border bg-muted/30 p-3">
+              <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-md bg-primary/10 text-primary">
+                <FileSpreadsheet className="h-4 w-4" />
+              </div>
+              <div className="min-w-0 flex-1">
+                <p className="truncate text-sm font-medium">{fileName}</p>
+                <p className="text-xs text-muted-foreground">
+                  {rows.length} row{rows.length === 1 ? "" : "s"} detected
+                </p>
+              </div>
+              <button
+                type="button"
+                onClick={clearFile}
+                aria-label="Remove file"
+                className="flex h-7 w-7 shrink-0 cursor-pointer items-center justify-center rounded-md text-muted-foreground transition-colors hover:bg-destructive/10 hover:text-destructive"
+              >
+                <X className="h-4 w-4" />
+              </button>
+            </div>
+          ) : (
+            <label
+              onDragOver={(e) => {
+                e.preventDefault();
+                setDragActive(true);
+              }}
+              onDragLeave={() => setDragActive(false)}
+              onDrop={handleDrop}
+              className={cn(
+                "flex cursor-pointer flex-col items-center gap-2 rounded-lg border-2 border-dashed p-8 text-center transition-colors",
+                dragActive
+                  ? "border-primary bg-primary/5"
+                  : "border-border hover:border-primary/40 hover:bg-muted/30",
+              )}
+            >
+              <div className="flex h-11 w-11 items-center justify-center rounded-full bg-primary/10 text-primary">
+                <FileUp className="h-5 w-5" />
+              </div>
+              <p className="text-sm font-medium">
+                Drop your CSV here, or <span className="text-primary">browse</span>
+              </p>
+              <p className="text-xs text-muted-foreground">.csv files only</p>
+              <input
+                ref={fileInputRef}
+                type="file"
+                accept=".csv,text/csv"
+                onChange={handleFileChange}
+                className="sr-only"
+              />
+            </label>
+          )
         ) : (
-          <div className="space-y-1">
+          <div className="space-y-1.5">
             <Textarea
               placeholder={`Select your rows in Google Sheets (including the header row), copy (Cmd/Ctrl+C), then paste here.\n\nname\tcompany\tphone\n...`}
               value={pasteText}
@@ -141,13 +210,13 @@ export function LeadImportDialog() {
           </div>
         )}
 
-        {rows.length > 0 && !result && (
+        {rows.length > 0 && !result && (mode === "paste" || fileName) && (
           <div className="space-y-2">
-            <p className="text-sm text-muted-foreground">
-              {mode === "file" && fileName ? `${fileName} — ` : ""}
-              {rows.length} row{rows.length === 1 ? "" : "s"} ready to import.
-            </p>
-            <div className="max-h-52 overflow-y-auto rounded-md border">
+            <div className="flex items-center gap-1.5 text-sm font-medium text-foreground">
+              <CheckCircle2 className="h-3.5 w-3.5 text-emerald-500" />
+              {rows.length} row{rows.length === 1 ? "" : "s"} ready to import
+            </div>
+            <div className="max-h-52 overflow-y-auto rounded-lg border">
               <Table>
                 <TableHeader>
                   <TableRow>
@@ -158,10 +227,10 @@ export function LeadImportDialog() {
                 </TableHeader>
                 <TableBody>
                   {rows.slice(0, 8).map((r, i) => (
-                    <TableRow key={i}>
-                      <TableCell>{r.name}</TableCell>
-                      <TableCell>{r.company || "—"}</TableCell>
-                      <TableCell>{r.source || "OTHER"}</TableCell>
+                    <TableRow key={i} className="hover:bg-muted/40">
+                      <TableCell className="font-medium">{r.name}</TableCell>
+                      <TableCell className="text-muted-foreground">{r.company || "—"}</TableCell>
+                      <TableCell className="text-muted-foreground">{r.source || "OTHER"}</TableCell>
                     </TableRow>
                   ))}
                 </TableBody>
@@ -174,8 +243,11 @@ export function LeadImportDialog() {
         )}
 
         {result && (
-          <div className="space-y-1 rounded-md border p-3 text-sm">
-            <p className="font-medium text-primary">{result.created} lead{result.created === 1 ? "" : "s"} imported</p>
+          <div className="space-y-1.5 rounded-lg border bg-muted/20 p-3 text-sm">
+            <p className="flex items-center gap-1.5 font-medium text-emerald-600 dark:text-emerald-400">
+              <CheckCircle2 className="h-4 w-4" />
+              {result.created} lead{result.created === 1 ? "" : "s"} imported
+            </p>
             {result.duplicates > 0 && (
               <p className="text-amber-600 dark:text-amber-400">
                 {result.duplicates} matched an existing lead by name/company — imported anyway, review for duplicates.
@@ -197,12 +269,13 @@ export function LeadImportDialog() {
         )}
 
         <DialogFooter>
-          <Button
-            onClick={handleImport}
-            disabled={rows.length === 0 || importing || !!result}
-          >
-            {importing ? "Importing..." : `Import ${rows.length || ""} lead${rows.length === 1 ? "" : "s"}`}
-          </Button>
+          {result ? (
+            <Button onClick={() => handleOpenChange(false)}>Done</Button>
+          ) : (
+            <Button onClick={handleImport} disabled={rows.length === 0 || importing}>
+              {importing ? "Importing..." : `Import ${rows.length || ""} lead${rows.length === 1 ? "" : "s"}`}
+            </Button>
+          )}
         </DialogFooter>
       </DialogContent>
     </Dialog>
