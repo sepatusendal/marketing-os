@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
 import { ArrowDown, ArrowUp, Trash2 } from "lucide-react";
@@ -30,6 +30,15 @@ export function BoardColumnManager({ columns }: { columns: BoardColumn[] }) {
   const [name, setName] = useState("");
   const [status, setStatus] = useState<TaskStatus>("TODO");
   const [creating, setCreating] = useState(false);
+  const [localColumns, setLocalColumns] = useState(columns);
+  const [movingId, setMovingId] = useState<string | null>(null);
+
+  // Reconciles with the server once router.refresh() lands (create/delete/
+  // rename all go through this same prop), without clobbering the optimistic
+  // reorder already applied in handleMove.
+  useEffect(() => {
+    setLocalColumns(columns);
+  }, [columns]);
 
   async function handleCreate(e: React.FormEvent) {
     e.preventDefault();
@@ -52,9 +61,15 @@ export function BoardColumnManager({ columns }: { columns: BoardColumn[] }) {
   }
 
   async function handleColor(id: string, color: string) {
+    const previous = localColumns;
+    setLocalColumns((cols) => cols.map((c) => (c.id === id ? { ...c, color } : c)));
     const result = await updateBoardColumnAction({ id, color });
-    if (result.error) toast.error(result.error);
-    else router.refresh();
+    if (result.error) {
+      toast.error(result.error);
+      setLocalColumns(previous);
+    } else {
+      router.refresh();
+    }
   }
 
   async function handleWipLimit(id: string, value: string) {
@@ -65,25 +80,42 @@ export function BoardColumnManager({ columns }: { columns: BoardColumn[] }) {
   }
 
   async function handleDelete(id: string) {
+    const previous = localColumns;
+    setLocalColumns((cols) => cols.filter((c) => c.id !== id));
     const result = await deleteBoardColumnAction({ id });
-    if (result.error) toast.error(result.error);
-    else {
+    if (result.error) {
+      toast.error(result.error);
+      setLocalColumns(previous);
+    } else {
       toast.success("Column deleted");
       router.refresh();
     }
   }
 
   async function handleMove(index: number, direction: -1 | 1) {
-    const ordered = [...columns].sort((a, b) => a.position - b.position);
+    if (movingId) return; // a reorder is already in flight — ignore races from double-clicks
+    const ordered = [...localColumns].sort((a, b) => a.position - b.position);
     const target = index + direction;
     if (target < 0 || target >= ordered.length) return;
     [ordered[index], ordered[target]] = [ordered[target], ordered[index]];
+
+    const previous = localColumns;
+    setMovingId(ordered[index].id);
+    setLocalColumns(
+      ordered.map((c, i) => ({ ...c, position: i })), // optimistic: reflects instantly, no wait for refresh
+    );
+
     const result = await reorderBoardColumnsAction({ orderedIds: ordered.map((c) => c.id) });
-    if (result.error) toast.error(result.error);
-    else router.refresh();
+    setMovingId(null);
+    if (result.error) {
+      toast.error(result.error);
+      setLocalColumns(previous);
+    } else {
+      router.refresh();
+    }
   }
 
-  const sorted = [...columns].sort((a, b) => a.position - b.position);
+  const sorted = [...localColumns].sort((a, b) => a.position - b.position);
 
   return (
     <div className="space-y-6">
@@ -98,7 +130,7 @@ export function BoardColumnManager({ columns }: { columns: BoardColumn[] }) {
                 variant="ghost"
                 size="sm"
                 className="h-5 px-1"
-                disabled={index === 0}
+                disabled={index === 0 || movingId !== null}
                 onClick={() => handleMove(index, -1)}
               >
                 <ArrowUp className="h-3.5 w-3.5" />
@@ -107,7 +139,7 @@ export function BoardColumnManager({ columns }: { columns: BoardColumn[] }) {
                 variant="ghost"
                 size="sm"
                 className="h-5 px-1"
-                disabled={index === sorted.length - 1}
+                disabled={index === sorted.length - 1 || movingId !== null}
                 onClick={() => handleMove(index, 1)}
               >
                 <ArrowDown className="h-3.5 w-3.5" />
