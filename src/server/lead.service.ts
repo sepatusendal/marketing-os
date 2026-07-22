@@ -129,25 +129,3 @@ export async function touchLastContact(id: string) {
 export async function setNextFollowUp(id: string, date: Date | null) {
   return prisma.lead.update({ where: { id }, data: { nextFollowUpAt: date } });
 }
-
-export async function convertToClient(leadId: string) {
-  const lead = await prisma.lead.findUnique({ where: { id: leadId }, include: { client: true } });
-  if (!lead) throw new Error("Lead not found");
-  if (lead.status !== "WON") throw new Error("Only Won leads can be converted");
-  if (lead.client) return lead.client;
-
-  return prisma.client.create({
-    data: {
-      leadId: lead.id,
-      name: lead.name,
-      company: lead.company,
-    },
-  });
-}
-
-export async function listClients() {
-  return prisma.client.findMany({
-    include: { lead: { include: { owner: true, campaign: { select: { id: true, name: true } } } } },
-    orderBy: { since: "desc" },
-  });
-}

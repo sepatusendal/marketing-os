@@ -11,9 +11,9 @@ import {
   touchLastContact,
   setNextFollowUp,
   findDuplicateLead,
-  convertToClient,
   getLead,
 } from "@/server/lead.service";
+import { convertToClient } from "@/server/client.service";
 import { createLeadSchema, updateLeadSchema, updateLeadStatusSchema } from "@/lib/schemas/lead";
 import { createTask } from "@/server/task.service";
 import { createNotification } from "@/server/notification.service";

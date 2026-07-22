@@ -52,7 +52,9 @@ enum LeadStatus {
   LOST
 }
 
-/** Only set when status is LOST — structured so lost patterns are queryable, not buried in free-text notes. */
+/**
+ * Only set when status is LOST — structured so lost patterns are queryable, not buried in free-text notes.
+ */
 enum LeadLostReason {
   BUDGET
   TIMING
@@ -121,6 +123,7 @@ model User {
   campaignsOwned Campaign[]
   tasksAssigned  Task[]
   leadsOwned     Lead[]
+  clientsOwned   Client[]
   expenses       Expense[]
   assets         Asset[]
   comments       Comment[]
@@ -156,21 +159,21 @@ model Campaign {
 }
 
 model Task {
-  id          String     @id @default(cuid())
+  id          String       @id @default(cuid())
   title       String
   description String?
   campaignId  String? // D2: nullable
-  campaign    Campaign?  @relation(fields: [campaignId], references: [id])
-  assigneeId  String?    @db.Uuid
-  assignee    User?      @relation(fields: [assigneeId], references: [id])
+  campaign    Campaign?    @relation(fields: [campaignId], references: [id])
+  assigneeId  String?      @db.Uuid
+  assignee    User?        @relation(fields: [assigneeId], references: [id])
   dueDate     DateTime?
-  priority    Priority   @default(MEDIUM)
-  status      TaskStatus @default(TODO)
+  priority    Priority     @default(MEDIUM)
+  status      TaskStatus   @default(TODO)
   columnId    String?
   column      BoardColumn? @relation(fields: [columnId], references: [id])
-  labels      String[]   @default([]) // fixed palette tags, e.g. "red", "blue"
-  createdAt   DateTime   @default(now())
-  updatedAt   DateTime   @updatedAt
+  labels      String[]     @default([]) // fixed palette tags, e.g. "red", "blue"
+  createdAt   DateTime     @default(now())
+  updatedAt   DateTime     @updatedAt
 
   assets         Asset[] // attachments
   checklistItems TaskChecklistItem[]
@@ -205,37 +208,54 @@ model TaskChecklistItem {
 }
 
 model Lead {
-  id               String     @id @default(cuid())
+  id               String          @id @default(cuid())
   name             String
   company          String?
   industry         String?
   phone            String?
-  source           LeadSource @default(OTHER)
-  status           LeadStatus @default(NEW)
-  ownerId          String?    @db.Uuid
-  owner            User?      @relation(fields: [ownerId], references: [id])
+  source           LeadSource      @default(OTHER)
+  status           LeadStatus      @default(NEW)
+  ownerId          String?         @db.Uuid
+  owner            User?           @relation(fields: [ownerId], references: [id])
   campaignId       String? // D3: attribution
-  campaign         Campaign?  @relation(fields: [campaignId], references: [id])
-  potentialRevenue Decimal?   @db.Decimal(14, 2)
+  campaign         Campaign?       @relation(fields: [campaignId], references: [id])
+  potentialRevenue Decimal?        @db.Decimal(14, 2)
   lastContactAt    DateTime?
   nextFollowUpAt   DateTime?
   lostReason       LeadLostReason?
   notes            String?
-  createdAt        DateTime   @default(now())
-  updatedAt        DateTime   @updatedAt
+  createdAt        DateTime        @default(now())
+  updatedAt        DateTime        @updatedAt
 
   client Client?
 }
 
+enum ClientStatus {
+  ACTIVE
+  INACTIVE
+  CHURNED
+}
+
 model Client {
-  id        String   @id @default(cuid())
-  leadId    String   @unique
-  lead      Lead     @relation(fields: [leadId], references: [id])
-  name      String
-  company   String?
-  since     DateTime @default(now())
-  notes     String?
-  createdAt DateTime @default(now())
+  id            String       @id @default(cuid())
+  // Nullable + still unique: most clients still arrive via lead conversion,
+  // but a client can now also be created directly (manual add or CSV sync
+  // of a roster that existed before this app did).
+  leadId        String?      @unique
+  lead          Lead?        @relation(fields: [leadId], references: [id])
+  name          String
+  company       String?
+  email         String?
+  phone         String?
+  industry      String?
+  status        ClientStatus @default(ACTIVE)
+  contractValue Decimal?     @db.Decimal(14, 2)
+  ownerId       String?      @db.Uuid
+  owner         User?        @relation(fields: [ownerId], references: [id])
+  since         DateTime     @default(now())
+  notes         String?
+  createdAt     DateTime     @default(now())
+  updatedAt     DateTime     @updatedAt
 }
 
 model Expense {
