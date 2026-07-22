@@ -57,16 +57,22 @@ export function LeadCard({
     >
       <div className="flex items-center justify-between gap-1">
         <div className="min-w-0 truncate font-medium">{lead.name}</div>
-        {(staleness === "overdue" || staleness === "warning") && (
+        {staleness !== "none" && staleness !== "fresh" && (
           <span
             title={
               staleness === "overdue"
-                ? `No contact in ${FOLLOWUP_SLA_HOURS}+ hours`
-                : "Follow-up due soon"
+                ? lead.nextFollowUpAt
+                  ? "Follow-up date has passed"
+                  : `No contact in ${FOLLOWUP_SLA_HOURS}+ hours`
+                : staleness === "scheduled"
+                  ? `Follow-up scheduled for ${new Date(lead.nextFollowUpAt!).toLocaleDateString("id-ID")}`
+                  : "Follow-up due soon"
             }
             className={cn(
               "h-1.5 w-1.5 shrink-0 rounded-full",
-              staleness === "overdue" ? "bg-destructive" : "bg-amber-500",
+              staleness === "overdue" && "bg-destructive",
+              staleness === "warning" && "bg-amber-500",
+              staleness === "scheduled" && "bg-blue-500",
             )}
           />
         )}

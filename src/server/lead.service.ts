@@ -1,5 +1,5 @@
 import { prisma } from "@/lib/prisma";
-import type { Prisma, LeadStatus, LeadSource } from "@prisma/client";
+import type { Prisma, LeadStatus, LeadSource, LeadLostReason } from "@prisma/client";
 import type { CreateLeadInput, UpdateLeadInput } from "@/lib/schemas/lead";
 
 const LEAD_INCLUDE = {
@@ -77,6 +77,7 @@ export async function createLead(input: CreateLeadInput) {
       ownerId: input.ownerId || null,
       campaignId: input.campaignId || null,
       potentialRevenue: input.potentialRevenue ?? null,
+      nextFollowUpAt: input.nextFollowUpAt ? new Date(input.nextFollowUpAt) : null,
       notes: input.notes || null,
     },
     include: LEAD_INCLUDE,
@@ -95,18 +96,38 @@ export async function updateLead(input: UpdateLeadInput) {
       ownerId: input.ownerId || null,
       campaignId: input.campaignId || null,
       potentialRevenue: input.potentialRevenue ?? null,
+      nextFollowUpAt: input.nextFollowUpAt ? new Date(input.nextFollowUpAt) : null,
       notes: input.notes || null,
     },
     include: LEAD_INCLUDE,
   });
 }
 
-export async function updateLeadStatus(id: string, status: LeadStatus) {
-  return prisma.lead.update({ where: { id }, data: { status }, include: LEAD_INCLUDE });
+/** Terminal statuses clear any pending follow-up date — a WON/LOST lead has nothing left to schedule. */
+const TERMINAL_STATUSES: LeadStatus[] = ["WON", "LOST"];
+
+export async function updateLeadStatus(
+  id: string,
+  status: LeadStatus,
+  lostReason?: LeadLostReason,
+) {
+  return prisma.lead.update({
+    where: { id },
+    data: {
+      status,
+      lostReason: status === "LOST" ? (lostReason ?? null) : null,
+      ...(TERMINAL_STATUSES.includes(status) ? { nextFollowUpAt: null } : {}),
+    },
+    include: LEAD_INCLUDE,
+  });
 }
 
 export async function touchLastContact(id: string) {
   return prisma.lead.update({ where: { id }, data: { lastContactAt: new Date() } });
+}
+
+export async function setNextFollowUp(id: string, date: Date | null) {
+  return prisma.lead.update({ where: { id }, data: { nextFollowUpAt: date } });
 }
 
 export async function convertToClient(leadId: string) {

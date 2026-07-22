@@ -16,6 +16,7 @@ import { formatDate, formatIDR } from "@/lib/format";
 import { EmptyInboxIllustration } from "@/components/ui/empty-illustration";
 import { getLeadStaleness } from "@/lib/lead-followup";
 import { computeLeadScore } from "@/lib/lead-score";
+import { LEAD_STATUS_LABEL } from "@/lib/lead-labels";
 import { LeadScoreBadge } from "./lead-score-badge";
 import { cn } from "@/lib/utils";
 import { LeadDrawer } from "./lead-drawer";
@@ -110,10 +111,18 @@ export function LeadTable({
                 <div className="flex items-center gap-2">
                   {staleness !== "none" && staleness !== "fresh" && (
                     <span
-                      title={staleness === "overdue" ? "Overdue for follow-up" : "Follow-up due soon"}
+                      title={
+                        staleness === "overdue"
+                          ? "Overdue for follow-up"
+                          : staleness === "scheduled"
+                            ? "Follow-up scheduled"
+                            : "Follow-up due soon"
+                      }
                       className={cn(
                         "h-1.5 w-1.5 shrink-0 rounded-full",
-                        staleness === "overdue" ? "bg-destructive" : "bg-amber-500",
+                        staleness === "overdue" && "bg-destructive",
+                        staleness === "warning" && "bg-amber-500",
+                        staleness === "scheduled" && "bg-blue-500",
                       )}
                     />
                   )}
@@ -121,7 +130,7 @@ export function LeadTable({
                 </div>
               </TableCell>
               <TableCell>{lead.company ?? "—"}</TableCell>
-              <TableCell>{lead.status}</TableCell>
+              <TableCell>{LEAD_STATUS_LABEL[lead.status]}</TableCell>
               <TableCell>{lead.source}</TableCell>
               <TableCell>{lead.owner?.name ?? "—"}</TableCell>
               <TableCell className="text-sm text-muted-foreground">

@@ -28,6 +28,8 @@ export async function GET(request: Request) {
       { key: "NEW", label: "New" },
       { key: "CONTACTED", label: "Contacted" },
       { key: "QUALIFIED", label: "Qualified" },
+      { key: "PROPOSAL_SENT", label: "Proposal Sent" },
+      { key: "INTERNAL_REVIEW", label: "Internal Review" },
       { key: "NEGOTIATION", label: "Negotiation" },
       { key: "WON", label: "Won" },
       { key: "LOST", label: "Lost" },

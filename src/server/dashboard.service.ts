@@ -87,7 +87,16 @@ export const getLeadSummary = cache(async function getLeadSummary() {
     LeadStatus,
     number
   >;
-  const order: LeadStatus[] = ["NEW", "CONTACTED", "QUALIFIED", "NEGOTIATION", "WON", "LOST"];
+  const order: LeadStatus[] = [
+    "NEW",
+    "CONTACTED",
+    "QUALIFIED",
+    "PROPOSAL_SENT",
+    "INTERNAL_REVIEW",
+    "NEGOTIATION",
+    "WON",
+    "LOST",
+  ];
 
   return {
     byStatus: order.map((status) => ({ status, count: counts[status] ?? 0 })),
@@ -105,13 +114,22 @@ export const getLeadsNeedingFollowup = cache(async function getLeadsNeedingFollo
   limit: number | null = 10,
 ) {
   const slaThreshold = new Date(Date.now() - FOLLOWUP_SLA_HOURS * 60 * 60 * 1000);
+  const now = new Date();
 
+  // A manual nextFollowUpAt overrides the generic SLA entirely — see
+  // lib/lead-followup.ts for the same rule applied client-side.
   return prisma.lead.findMany({
     where: {
       status: { notIn: ["WON", "LOST"] },
       OR: [
-        { lastContactAt: { lt: slaThreshold } },
-        { lastContactAt: null, createdAt: { lt: slaThreshold } },
+        { nextFollowUpAt: { lte: now } },
+        {
+          nextFollowUpAt: null,
+          OR: [
+            { lastContactAt: { lt: slaThreshold } },
+            { lastContactAt: null, createdAt: { lt: slaThreshold } },
+          ],
+        },
       ],
     },
     include: { owner: true, campaign: { select: { id: true, name: true } } },

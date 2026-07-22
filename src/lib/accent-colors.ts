@@ -103,6 +103,8 @@ export const LEAD_STATUS_ACCENT: Record<LeadStatus, AccentColor> = {
   NEW: "slate",
   CONTACTED: "blue",
   QUALIFIED: "cyan",
+  PROPOSAL_SENT: "violet",
+  INTERNAL_REVIEW: "indigo",
   NEGOTIATION: "amber",
   WON: "emerald",
   LOST: "red",

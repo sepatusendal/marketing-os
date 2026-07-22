@@ -1,8 +1,9 @@
 import { z } from "zod";
-import { LeadStatus, LeadSource } from "@prisma/client";
+import { LeadStatus, LeadSource, LeadLostReason } from "@prisma/client";
 
 const statusValues = Object.values(LeadStatus) as [LeadStatus, ...LeadStatus[]];
 const sourceValues = Object.values(LeadSource) as [LeadSource, ...LeadSource[]];
+const lostReasonValues = Object.values(LeadLostReason) as [LeadLostReason, ...LeadLostReason[]];
 
 export const createLeadSchema = z.object({
   name: z.string().min(1, "Name is required").max(200),
@@ -16,6 +17,7 @@ export const createLeadSchema = z.object({
     (v) => (v === "" || v === undefined || v === null ? undefined : v),
     z.coerce.number().min(0).optional(),
   ),
+  nextFollowUpAt: z.string().optional().or(z.literal("")),
   notes: z.string().max(5000).optional().or(z.literal("")),
 });
 
@@ -26,6 +28,7 @@ export const updateLeadSchema = createLeadSchema.extend({
 export const updateLeadStatusSchema = z.object({
   id: z.string().min(1),
   status: z.enum(statusValues),
+  lostReason: z.enum(lostReasonValues).optional(),
 });
 
 export type CreateLeadInput = z.infer<typeof createLeadSchema>;

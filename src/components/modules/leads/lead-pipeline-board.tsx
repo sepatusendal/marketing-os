@@ -8,17 +8,15 @@ import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import { LeadCard, type LeadWithRelations } from "./lead-card";
 import { LeadDrawer } from "./lead-drawer";
+import { LostReasonDialog } from "./lost-reason-dialog";
 import { updateLeadStatusAction } from "@/app/(app)/leads/actions";
-import type { LeadStatus } from "@prisma/client";
+import { LEAD_STATUS_ORDER, LEAD_STATUS_LABEL } from "@/lib/lead-labels";
+import type { LeadStatus, LeadLostReason } from "@prisma/client";
 
-const COLUMNS: { status: LeadStatus; label: string }[] = [
-  { status: "NEW", label: "New" },
-  { status: "CONTACTED", label: "Contacted" },
-  { status: "QUALIFIED", label: "Qualified" },
-  { status: "NEGOTIATION", label: "Negotiation" },
-  { status: "WON", label: "Won" },
-  { status: "LOST", label: "Lost" },
-];
+const COLUMNS: { status: LeadStatus; label: string }[] = LEAD_STATUS_ORDER.map((status) => ({
+  status,
+  label: LEAD_STATUS_LABEL[status],
+}));
 
 export function LeadPipelineBoard({
   leads,
@@ -36,18 +34,29 @@ export function LeadPipelineBoard({
   const [dragOverColumn, setDragOverColumn] = useState<LeadStatus | null>(null);
   const [selectedLead, setSelectedLead] = useState<LeadWithRelations | null>(null);
   const [drawerOpen, setDrawerOpen] = useState(false);
+  const [lostDialogOpen, setLostDialogOpen] = useState(false);
+  const [pendingLostLeadId, setPendingLostLeadId] = useState<string | null>(null);
 
-  function handleDrop(status: LeadStatus, leadId: string) {
-    setDragOverColumn(null);
-    if (!canEdit) return;
+  function commitStatusChange(leadId: string, status: LeadStatus, lostReason?: LeadLostReason) {
     startTransition(async () => {
-      const result = await updateLeadStatusAction({ id: leadId, status });
+      const result = await updateLeadStatusAction({ id: leadId, status, lostReason });
       if (result.error) {
         toast.error(result.error);
         return;
       }
       router.refresh();
     });
+  }
+
+  function handleDrop(status: LeadStatus, leadId: string) {
+    setDragOverColumn(null);
+    if (!canEdit) return;
+    if (status === "LOST") {
+      setPendingLostLeadId(leadId);
+      setLostDialogOpen(true);
+      return;
+    }
+    commitStatusChange(leadId, status);
   }
 
   return (
@@ -67,10 +76,10 @@ export function LeadPipelineBoard({
         )}
       </div>
 
-      {/* All 6 pipeline stages stay visible on one screen (no horizontal
-          scroll) so the whole pipeline reads at a glance — LeadCard is
-          deliberately compact to fit this width. */}
-      <div className="grid grid-cols-6 gap-2">
+      {/* 8 pipeline stages no longer fit on one screen without cramping each
+          card — scroll horizontally instead, with each column pinned to a
+          minimum width so cards stay readable. */}
+      <div className="flex gap-2 overflow-x-auto pb-2">
         {COLUMNS.map((col) => {
           const columnLeads = leads.filter((l) => l.status === col.status);
           return (
@@ -87,7 +96,7 @@ export function LeadPipelineBoard({
                 if (leadId) handleDrop(col.status, leadId);
               }}
               className={cn(
-                "flex min-h-40 min-w-0 flex-col gap-1.5 rounded-lg border bg-muted/20 p-2",
+                "flex min-h-40 w-44 shrink-0 flex-col gap-1.5 rounded-lg border bg-muted/20 p-2",
                 dragOverColumn === col.status && "ring-2 ring-primary",
               )}
             >
@@ -118,6 +127,20 @@ export function LeadPipelineBoard({
         campaignOptions={campaignOptions}
         users={users}
         canEdit={canEdit}
+      />
+
+      <LostReasonDialog
+        open={lostDialogOpen}
+        onOpenChange={setLostDialogOpen}
+        onCancel={() => {
+          setLostDialogOpen(false);
+          setPendingLostLeadId(null);
+        }}
+        onConfirm={(reason) => {
+          setLostDialogOpen(false);
+          if (pendingLostLeadId) commitStatusChange(pendingLostLeadId, "LOST", reason);
+          setPendingLostLeadId(null);
+        }}
       />
     </div>
   );

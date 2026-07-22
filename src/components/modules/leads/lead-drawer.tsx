@@ -33,10 +33,14 @@ import {
   updateLeadAction,
   updateLeadStatusAction,
   touchLastContactAction,
+  setNextFollowUpAction,
   convertToClientAction,
   type ActionState,
 } from "@/app/(app)/leads/actions";
 import { formatDate } from "@/lib/format";
+import { LEAD_STATUS_ORDER, LEAD_STATUS_LABEL, LEAD_LOST_REASON_LABEL } from "@/lib/lead-labels";
+import { LostReasonDialog } from "./lost-reason-dialog";
+import type { LeadLostReason } from "@prisma/client";
 import type { LeadWithRelations } from "./lead-card";
 
 const SOURCES = [
@@ -50,7 +54,6 @@ const SOURCES = [
   "EMAIL",
   "OTHER",
 ];
-const STATUSES = ["NEW", "CONTACTED", "QUALIFIED", "NEGOTIATION", "WON", "LOST"];
 
 export function LeadDrawer({
   open,
@@ -73,6 +76,19 @@ export function LeadDrawer({
   const [state, formAction, pending] = useActionState<ActionState, FormData>(action, {});
   const [comments, setComments] = useState<(Comment & { author: PrismaUser })[]>([]);
   const [timeline, setTimeline] = useState<(ActivityLog & { actor: PrismaUser })[]>([]);
+  const [lostDialogOpen, setLostDialogOpen] = useState(false);
+  const [nextFollowUp, setNextFollowUp] = useState(
+    lead?.nextFollowUpAt ? new Date(lead.nextFollowUpAt).toISOString().slice(0, 10) : "",
+  );
+  const [savingFollowUp, setSavingFollowUp] = useState(false);
+
+  // Reset the follow-up input when the drawer switches to a different lead —
+  // an in-render state adjustment (not an effect) so it can't cascade.
+  const [syncedLeadId, setSyncedLeadId] = useState(lead?.id);
+  if (lead?.id !== syncedLeadId) {
+    setSyncedLeadId(lead?.id);
+    setNextFollowUp(lead?.nextFollowUpAt ? new Date(lead.nextFollowUpAt).toISOString().slice(0, 10) : "");
+  }
 
   useEffect(() => {
     if (state.success) {
@@ -93,12 +109,32 @@ export function LeadDrawer({
 
   const fieldError = (field: string) => state.fieldErrors?.[field]?.[0];
 
-  async function handleStatusChange(status: string) {
+  async function commitStatusChange(status: string, lostReason?: LeadLostReason) {
     if (!lead) return;
-    const result = await updateLeadStatusAction({ id: lead.id, status });
+    const result = await updateLeadStatusAction({ id: lead.id, status, lostReason });
     if (result.error) toast.error(result.error);
     else {
       toast.success("Status updated");
+      router.refresh();
+    }
+  }
+
+  function handleStatusChange(status: string) {
+    if (status === "LOST") {
+      setLostDialogOpen(true);
+      return;
+    }
+    commitStatusChange(status);
+  }
+
+  async function handleSaveFollowUp() {
+    if (!lead) return;
+    setSavingFollowUp(true);
+    const result = await setNextFollowUpAction(lead.id, nextFollowUp || null);
+    setSavingFollowUp(false);
+    if (result.error) toast.error(result.error);
+    else {
+      toast.success(nextFollowUp ? "Follow-up scheduled" : "Follow-up cleared");
       router.refresh();
     }
   }
@@ -254,7 +290,7 @@ export function LeadDrawer({
               <div className="space-y-2">
                 <Label>Status</Label>
                 <Select
-                  defaultValue={lead.status}
+                  value={lead.status}
                   onValueChange={(v) => handleStatusChange(String(v))}
                   disabled={!canEdit}
                 >
@@ -262,18 +298,51 @@ export function LeadDrawer({
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent>
-                    {STATUSES.map((s) => (
+                    {LEAD_STATUS_ORDER.map((s) => (
                       <SelectItem key={s} value={s}>
-                        {s}
+                        {LEAD_STATUS_LABEL[s]}
                       </SelectItem>
                     ))}
                   </SelectContent>
                 </Select>
+                {lead.status === "LOST" && lead.lostReason && (
+                  <p className="text-sm text-muted-foreground">
+                    Reason: {LEAD_LOST_REASON_LABEL[lead.lostReason]}
+                  </p>
+                )}
               </div>
 
               <div className="text-sm text-muted-foreground">
                 Last contact: {formatDate(lead.lastContactAt)}
               </div>
+
+              {lead.status !== "WON" && lead.status !== "LOST" && (
+                <div className="space-y-2">
+                  <Label htmlFor="nextFollowUp">Next follow-up</Label>
+                  <div className="flex gap-2">
+                    <Input
+                      id="nextFollowUp"
+                      type="date"
+                      value={nextFollowUp}
+                      onChange={(e) => setNextFollowUp(e.target.value)}
+                      disabled={!canEdit}
+                      className="flex-1"
+                    />
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      disabled={!canEdit || savingFollowUp}
+                      onClick={handleSaveFollowUp}
+                    >
+                      {savingFollowUp ? "Saving..." : "Save"}
+                    </Button>
+                  </div>
+                  <p className="text-xs text-muted-foreground">
+                    Overrides the default 48h SLA — useful when a school asks you to check back on a
+                    specific date instead.
+                  </p>
+                </div>
+              )}
 
               {canEdit && (
                 <div className="flex flex-wrap gap-2">
@@ -325,6 +394,16 @@ export function LeadDrawer({
           )}
         </div>
       </SheetContent>
+
+      <LostReasonDialog
+        open={lostDialogOpen}
+        onOpenChange={setLostDialogOpen}
+        onCancel={() => setLostDialogOpen(false)}
+        onConfirm={(reason) => {
+          setLostDialogOpen(false);
+          commitStatusChange("LOST", reason);
+        }}
+      />
     </Sheet>
   );
 }

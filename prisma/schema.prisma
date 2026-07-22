@@ -45,9 +45,21 @@ enum LeadStatus {
   NEW
   CONTACTED
   QUALIFIED
+  PROPOSAL_SENT
+  INTERNAL_REVIEW
   NEGOTIATION
   WON
   LOST
+}
+
+/** Only set when status is LOST — structured so lost patterns are queryable, not buried in free-text notes. */
+enum LeadLostReason {
+  BUDGET
+  TIMING
+  COMPETITOR
+  NO_RESPONSE
+  NOT_A_FIT
+  OTHER
 }
 
 enum LeadSource {
@@ -206,6 +218,8 @@ model Lead {
   campaign         Campaign?  @relation(fields: [campaignId], references: [id])
   potentialRevenue Decimal?   @db.Decimal(14, 2)
   lastContactAt    DateTime?
+  nextFollowUpAt   DateTime?
+  lostReason       LeadLostReason?
   notes            String?
   createdAt        DateTime   @default(now())
   updatedAt        DateTime   @updatedAt

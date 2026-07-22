@@ -22,7 +22,9 @@ const SOURCE_WEIGHTS: Record<LeadSource, number> = {
 
 const STATUS_WEIGHTS: Record<LeadStatus, number> = {
   WON: 30,
-  NEGOTIATION: 25,
+  NEGOTIATION: 27,
+  INTERNAL_REVIEW: 24,
+  PROPOSAL_SENT: 22,
   QUALIFIED: 20,
   CONTACTED: 12,
   NEW: 5,

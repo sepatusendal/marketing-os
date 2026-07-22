@@ -46,7 +46,16 @@ export async function getLeadFunnelReport(range: ReportDateRange = {}) {
   const leads = await prisma.lead.findMany({ where, select: { source: true, status: true } });
 
   const sources = [...new Set(leads.map((l) => l.source))].sort();
-  const statuses: LeadStatus[] = ["NEW", "CONTACTED", "QUALIFIED", "NEGOTIATION", "WON", "LOST"];
+  const statuses: LeadStatus[] = [
+    "NEW",
+    "CONTACTED",
+    "QUALIFIED",
+    "PROPOSAL_SENT",
+    "INTERNAL_REVIEW",
+    "NEGOTIATION",
+    "WON",
+    "LOST",
+  ];
 
   return sources.map((source: LeadSource) => {
     const sourceLeads = leads.filter((l) => l.source === source);

@@ -9,6 +9,7 @@ import {
   updateLead,
   updateLeadStatus,
   touchLastContact,
+  setNextFollowUp,
   findDuplicateLead,
   convertToClient,
   getLead,
@@ -156,16 +157,20 @@ export async function updateLeadStatusAction(input: unknown): Promise<ActionStat
   const parsed = updateLeadStatusSchema.safeParse(input);
   if (!parsed.success) return { error: "Invalid status change." };
 
+  if (parsed.data.status === "LOST" && !parsed.data.lostReason) {
+    return { error: "Pick a reason before marking this lead as Lost." };
+  }
+
   const existing = await getLead(parsed.data.id);
   if (!existing) return { error: "Lead not found." };
 
-  const lead = await updateLeadStatus(parsed.data.id, parsed.data.status);
+  const lead = await updateLeadStatus(parsed.data.id, parsed.data.status, parsed.data.lostReason);
   await logActivity({
     actorId: user.id,
     entityType: "LEAD",
     entityId: lead.id,
     action: "status_changed",
-    meta: { from: existing.status, to: parsed.data.status },
+    meta: { from: existing.status, to: parsed.data.status, lostReason: parsed.data.lostReason },
   });
 
   // Automation: a lead that just became WON gets an onboarding task so the
@@ -230,6 +235,25 @@ export async function touchLastContactAction(id: string): Promise<ActionState> {
     entityType: "LEAD",
     entityId: id,
     action: "contacted",
+  });
+
+  revalidatePath("/leads");
+  return { success: true };
+}
+
+export async function setNextFollowUpAction(id: string, date: string | null): Promise<ActionState> {
+  const user = await requireUser();
+  if (!authorize(user, "lead:crud")) {
+    return { error: "You don't have permission to update this lead." };
+  }
+
+  await setNextFollowUp(id, date ? new Date(date) : null);
+  await logActivity({
+    actorId: user.id,
+    entityType: "LEAD",
+    entityId: id,
+    action: date ? "followup_scheduled" : "followup_cleared",
+    meta: { nextFollowUpAt: date },
   });
 
   revalidatePath("/leads");
