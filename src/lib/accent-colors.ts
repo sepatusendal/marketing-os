@@ -124,6 +124,16 @@ export const LEAD_SOURCE_ACCENT: Record<LeadSource, AccentColor> = {
   OTHER: "slate",
 };
 
+/** Fixed hue order for lost reasons — same categorical rule as LEAD_SOURCE_ACCENT. */
+export const LEAD_LOST_REASON_ACCENT: Record<string, AccentColor> = {
+  BUDGET: "amber",
+  TIMING: "blue",
+  COMPETITOR: "red",
+  NO_RESPONSE: "slate",
+  NOT_A_FIT: "violet",
+  OTHER: "cyan",
+};
+
 /**
  * Reserved status colors (good/warning/critical) — for state, never reused
  * as a categorical "series" color. Used by meters/gauges like budget usage.

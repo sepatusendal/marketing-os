@@ -4,10 +4,18 @@ import {
   getCampaignPerformanceReport,
   getLeadFunnelReport,
   getBudgetByCategoryReport,
+  getSalesOverview,
+  getSourcePerformance,
+  getLostReasonBreakdown,
 } from "@/server/report.service";
+import { getClientStats } from "@/server/client.service";
 import { ReportDateFilter } from "@/components/modules/reports/report-date-filter";
 import { FunnelChart } from "@/components/modules/reports/funnel-chart";
+import { SalesOverviewCards } from "@/components/modules/reports/sales-overview-cards";
+import { SourcePerformanceChart } from "@/components/modules/reports/source-performance-chart";
+import { LostReasonChart } from "@/components/modules/reports/lost-reason-chart";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { KpiCard } from "@/components/modules/dashboard/kpi-card";
 import {
   Table,
   TableBody,
@@ -17,9 +25,9 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { buttonVariants } from "@/components/ui/button";
-import { formatDate, formatIDR } from "@/lib/format";
+import { formatDate, formatIDR, formatIDRCompact } from "@/lib/format";
 import { cn } from "@/lib/utils";
-import { Download } from "lucide-react";
+import { Download, Users, UserCheck, UserX, Wallet } from "lucide-react";
 
 function ExportLink({ href }: { href: string }) {
   return (
@@ -52,15 +60,55 @@ export default async function ReportsPage({
     Object.fromEntries(Object.entries(range).filter(([, v]) => v)) as Record<string, string>,
   ).toString();
 
-  const [campaignPerf, leadFunnel, budgetByCategory] = await Promise.all([
-    getCampaignPerformanceReport(),
-    getLeadFunnelReport(range),
-    getBudgetByCategoryReport(range),
-  ]);
+  const [campaignPerf, leadFunnel, budgetByCategory, salesOverview, sourcePerf, lostReasons, clientStats] =
+    await Promise.all([
+      getCampaignPerformanceReport(),
+      getLeadFunnelReport(range),
+      getBudgetByCategoryReport(range),
+      getSalesOverview(range),
+      getSourcePerformance(range),
+      getLostReasonBreakdown(range),
+      getClientStats(),
+    ]);
 
   return (
     <div className="space-y-6">
-      <h1 className="text-2xl font-semibold">Reports</h1>
+      <div className="flex flex-wrap items-center justify-between gap-2">
+        <h1 className="text-2xl font-semibold">Reports</h1>
+        <ReportDateFilter />
+      </div>
+
+      <Card>
+        <CardHeader className="flex-row items-center justify-between space-y-0">
+          <CardTitle className="text-base">Sales Performance</CardTitle>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          <SalesOverviewCards sales={salesOverview} />
+          <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
+            <SourcePerformanceChart data={sourcePerf} />
+            <LostReasonChart data={lostReasons} />
+          </div>
+          <div>
+            <p className="mb-2 text-sm font-medium text-muted-foreground">Clients</p>
+            <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
+              <KpiCard label="Total Clients" value={clientStats.total} icon={Users} accent="indigo" />
+              <KpiCard label="Active" value={clientStats.active} icon={UserCheck} accent="emerald" />
+              <KpiCard
+                label="Inactive / Churned"
+                value={clientStats.inactive + clientStats.churned}
+                icon={UserX}
+                accent="amber"
+              />
+              <KpiCard
+                label="Active Contract Value"
+                value={formatIDRCompact(clientStats.activeContractValue)}
+                icon={Wallet}
+                accent="violet"
+              />
+            </div>
+          </div>
+        </CardContent>
+      </Card>
 
       <Card>
         <CardHeader className="flex-row items-center justify-between space-y-0">
@@ -119,10 +167,7 @@ export default async function ReportsPage({
       <Card>
         <CardHeader className="flex-row items-center justify-between space-y-0">
           <CardTitle className="text-base">Lead Funnel</CardTitle>
-          <div className="flex items-center gap-2">
-            <ReportDateFilter />
-            <ExportLink href={`/api/reports/lead-funnel?${query}`} />
-          </div>
+          <ExportLink href={`/api/reports/lead-funnel?${query}`} />
         </CardHeader>
         <CardContent>
           <FunnelChart rows={leadFunnel} />
@@ -133,6 +178,8 @@ export default async function ReportsPage({
                 <TableHead className="text-right">New</TableHead>
                 <TableHead className="text-right">Contacted</TableHead>
                 <TableHead className="text-right">Qualified</TableHead>
+                <TableHead className="text-right">Proposal</TableHead>
+                <TableHead className="text-right">Review</TableHead>
                 <TableHead className="text-right">Negotiation</TableHead>
                 <TableHead className="text-right">Won</TableHead>
                 <TableHead className="text-right">Lost</TableHead>
@@ -143,7 +190,7 @@ export default async function ReportsPage({
             <TableBody>
               {leadFunnel.length === 0 ? (
                 <TableRow>
-                  <TableCell colSpan={9} className="text-center text-sm text-muted-foreground">
+                  <TableCell colSpan={11} className="text-center text-sm text-muted-foreground">
                     No leads in this range.
                   </TableCell>
                 </TableRow>

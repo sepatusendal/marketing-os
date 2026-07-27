@@ -1,8 +1,8 @@
 import { Suspense } from "react";
-import { CalendarDays, Megaphone, ListTodo, AlarmClock, Wallet } from "lucide-react";
+import { CalendarDays, Megaphone, ListTodo, AlarmClock, Wallet, Target, TrendingUp, Trophy, Users } from "lucide-react";
 import type { User } from "@prisma/client";
 import { getCurrentUser } from "@/lib/auth";
-import { formatIDR } from "@/lib/format";
+import { formatIDR, formatIDRCompact } from "@/lib/format";
 import { CountUp } from "@/components/ui/count-up";
 import { Sparkline } from "@/components/ui/charts/sparkline";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -24,6 +24,8 @@ import {
   getPerformanceTrend,
   getNewCampaignsThisWeek,
 } from "@/server/dashboard.service";
+import { getSalesOverview } from "@/server/report.service";
+import { getClientStats } from "@/server/client.service";
 import { listNotifications } from "@/server/notification.service";
 import { listBoardColumns } from "@/server/board-column.service";
 import { CampaignPerformanceWidget } from "@/components/modules/dashboard/campaign-performance-widget";
@@ -91,6 +93,10 @@ export default async function DashboardPage({
 
       <Suspense fallback={<KpiRowSkeleton />}>
         <KpiRow user={user} budgetPeriod={budgetPeriod} performanceRange={performanceRange} />
+      </Suspense>
+
+      <Suspense fallback={<KpiRowSkeleton />}>
+        <SalesPerformanceRow />
       </Suspense>
 
       <Suspense fallback={<RowSkeleton className="lg:grid-cols-4" heights={["h-72 lg:col-span-2", "h-72", "h-72"]} />}>
@@ -219,6 +225,51 @@ async function KpiRow({
           ) : undefined
         }
       />
+    </div>
+  );
+}
+
+async function SalesPerformanceRow() {
+  const [sales, clientStats] = await Promise.all([getSalesOverview(), getClientStats()]);
+
+  return (
+    <div className="space-y-2">
+      <div className="flex items-center justify-between">
+        <h2 className="text-sm font-medium text-muted-foreground">Sales Performance</h2>
+        <a href="/reports" className="text-xs text-muted-foreground hover:text-foreground hover:underline">
+          View full report →
+        </a>
+      </div>
+      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-4">
+        <KpiCard
+          label="Total Leads"
+          value={<CountUp value={sales.total} />}
+          icon={Users}
+          accent="indigo"
+          secondary={`${sales.open} open`}
+        />
+        <KpiCard
+          label="Win Rate"
+          value={<CountUp value={sales.winRate} suffix="%" />}
+          icon={Target}
+          accent="emerald"
+          secondary={`${sales.won} won · ${sales.lost} lost`}
+        />
+        <KpiCard
+          label="Open Pipeline"
+          value={formatIDRCompact(sales.openPipelineValue)}
+          icon={TrendingUp}
+          accent="amber"
+          secondary="potential revenue"
+        />
+        <KpiCard
+          label="Won Revenue"
+          value={formatIDRCompact(sales.wonRevenue)}
+          icon={Trophy}
+          accent="violet"
+          secondary={`${clientStats.active} active client${clientStats.active === 1 ? "" : "s"}`}
+        />
+      </div>
     </div>
   );
 }

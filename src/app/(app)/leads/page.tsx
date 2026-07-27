@@ -5,10 +5,12 @@ import type { LeadStatus, LeadSource } from "@prisma/client";
 import { listLeads, listLeadsPaginated } from "@/server/lead.service";
 import { listCampaignOptions } from "@/server/campaign.service";
 import { listActiveUsers } from "@/server/user.service";
+import { getSalesOverview } from "@/server/report.service";
 import { LeadPipelineBoard } from "@/components/modules/leads/lead-pipeline-board";
 import { LeadTable } from "@/components/modules/leads/lead-table";
 import { LeadFilters } from "@/components/modules/leads/lead-filters";
 import { LeadImportDialog } from "@/components/modules/leads/lead-import-dialog";
+import { SalesOverviewCards } from "@/components/modules/reports/sales-overview-cards";
 import { SavedViewsBar } from "@/components/ui/saved-views-bar";
 import { buttonVariants } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
@@ -40,12 +42,13 @@ export default async function LeadsPage({
     search: params.search,
   };
 
-  const [rawResult, campaignOptions, users] = await Promise.all([
+  const [rawResult, campaignOptions, users, salesOverview] = await Promise.all([
     view === "table"
       ? listLeadsPaginated({ ...leadFilters, cursor: params.cursor })
       : listLeads(leadFilters).then((leads) => ({ leads, nextCursor: null as string | null })),
     listCampaignOptions(),
     listActiveUsers(),
+    getSalesOverview(),
   ]);
 
   const leads = rawResult.leads.map((l) => ({
@@ -78,6 +81,8 @@ export default async function LeadsPage({
           </Link>
         </div>
       </div>
+
+      <SalesOverviewCards sales={salesOverview} />
 
       <LeadFilters view={view} />
       <SavedViewsBar

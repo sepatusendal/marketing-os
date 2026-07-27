@@ -1,4 +1,16 @@
-import type { LeadStatus, LeadLostReason } from "@prisma/client";
+import type { LeadStatus, LeadLostReason, LeadSource } from "@prisma/client";
+
+export const LEAD_SOURCE_LABEL: Record<LeadSource, string> = {
+  WEBSITE: "Website",
+  WHATSAPP: "WhatsApp",
+  INSTAGRAM: "Instagram",
+  TIKTOK: "TikTok",
+  REFERRAL: "Referral",
+  EVENT: "Event",
+  PAID_ADS: "Paid Ads",
+  EMAIL: "Email",
+  OTHER: "Other",
+};
 
 /** Canonical funnel order — single source of truth for every status list/column in the UI. */
 export const LEAD_STATUS_ORDER: LeadStatus[] = [
