@@ -5,6 +5,9 @@ import type { ClientStatus } from "@prisma/client";
 import { listClients, getClientStats } from "@/server/client.service";
 import { listActiveUsers } from "@/server/user.service";
 import { ClientsView } from "@/components/modules/leads/clients-view";
+import { buttonVariants } from "@/components/ui/button";
+import { cn } from "@/lib/utils";
+import { BarChart3 } from "lucide-react";
 
 export default async function ClientsPage({
   searchParams,
@@ -51,6 +54,10 @@ export default async function ClientsPage({
             Won business — converted from leads, or synced directly from your existing roster.
           </p>
         </div>
+        <Link href="/leads/analytics" className={cn(buttonVariants({ variant: "outline", size: "sm" }))}>
+          <BarChart3 className="mr-1 h-4 w-4" />
+          Analytics
+        </Link>
       </div>
 
       <ClientsView clients={clients} stats={stats} users={users} canEdit={canEdit} />

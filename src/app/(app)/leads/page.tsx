@@ -14,7 +14,7 @@ import { SalesOverviewCards } from "@/components/modules/reports/sales-overview-
 import { SavedViewsBar } from "@/components/ui/saved-views-bar";
 import { buttonVariants } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
-import { Download } from "lucide-react";
+import { Download, BarChart3 } from "lucide-react";
 
 export default async function LeadsPage({
   searchParams,
@@ -76,6 +76,13 @@ export default async function LeadsPage({
             <Download className="mr-1 h-4 w-4" />
             Export CSV
           </a>
+          <Link
+            href="/leads/analytics"
+            className={cn(buttonVariants({ variant: "outline", size: "sm" }))}
+          >
+            <BarChart3 className="mr-1 h-4 w-4" />
+            Analytics
+          </Link>
           <Link href="/leads/clients" className="text-sm text-muted-foreground hover:underline">
             View clients →
           </Link>

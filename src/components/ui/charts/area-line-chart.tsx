@@ -41,10 +41,13 @@ export function AreaLineChart({
   labels,
   series,
   height = 220,
+  valueFormatter = (v: number) => String(v),
 }: {
   labels: string[];
   series: ChartSeries[];
   height?: number;
+  /** Formats the tooltip's per-series value — e.g. Rupiah for a revenue series. Defaults to the raw number. */
+  valueFormatter?: (value: number) => string;
 }) {
   const [hoverIndex, setHoverIndex] = useState<number | null>(null);
   const svgRef = useRef<SVGSVGElement>(null);
@@ -194,7 +197,7 @@ export function AreaLineChart({
                   <span className="h-1.5 w-1.5 rounded-full" style={{ backgroundColor: s.colorHex }} />
                   {s.label}
                 </span>
-                <span className="font-medium text-foreground">{s.values[hoverIndex]}</span>
+                <span className="font-medium text-foreground">{valueFormatter(s.values[hoverIndex] ?? 0)}</span>
               </div>
             ))}
           </div>
