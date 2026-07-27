@@ -26,6 +26,25 @@ export const getNewLeadsThisMonth = cache(async function getNewLeadsThisMonth() 
   return prisma.lead.count({ where: { createdAt: { gte: jakartaStartOfMonth(new Date()) } } });
 });
 
+/** Open pipeline value broken down by stage — where the money currently sits, not just where the leads sit. */
+export const getPipelineByStage = cache(async function getPipelineByStage() {
+  const rows = await prisma.lead.groupBy({
+    by: ["status"],
+    where: { status: { in: OPEN_STATUSES } },
+    _count: true,
+    _sum: { potentialRevenue: true },
+  });
+
+  return OPEN_STATUSES.map((status) => {
+    const row = rows.find((r) => r.status === status);
+    return {
+      status,
+      count: row?._count ?? 0,
+      value: (row?._sum.potentialRevenue ?? 0).toString(),
+    };
+  }).filter((s) => s.count > 0);
+});
+
 /** Open pipeline value, both raw and probability-weighted (forecasted). */
 export const getPipelineForecast = cache(async function getPipelineForecast() {
   const leads = await prisma.lead.findMany({

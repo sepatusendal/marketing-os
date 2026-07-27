@@ -14,15 +14,18 @@ import {
   getTopClients,
   getClientGrowthTrend,
   getNewLeadsThisMonth,
+  getPipelineByStage,
 } from "@/server/sales-analytics.service";
 import { AdvancedOverviewCards } from "@/components/modules/reports/advanced-overview-cards";
 import { FunnelConversionChart } from "@/components/modules/reports/funnel-conversion-chart";
+import { PipelineValueDonut } from "@/components/modules/reports/pipeline-value-donut";
 import { SalesTrendChart } from "@/components/modules/reports/sales-trend-chart";
 import { OwnerLeaderboard } from "@/components/modules/reports/owner-leaderboard";
 import { SourcePerformanceChart } from "@/components/modules/reports/source-performance-chart";
 import { LostReasonChart } from "@/components/modules/reports/lost-reason-chart";
 import { TopClientsTable } from "@/components/modules/reports/top-clients-table";
 import { ClientGrowthChart } from "@/components/modules/reports/client-growth-chart";
+import { ClientStatusDonut } from "@/components/modules/reports/client-status-donut";
 import { FollowupWidget } from "@/components/modules/dashboard/followup-widget";
 import { KpiCard } from "@/components/modules/dashboard/kpi-card";
 import { formatIDRCompact } from "@/lib/format";
@@ -68,7 +71,9 @@ export default async function LeadsAnalyticsPage() {
         <OverviewSection />
       </Suspense>
 
-      <Suspense fallback={<RowSkeleton className="lg:grid-cols-2" heights={["h-96", "h-96"]} />}>
+      <Suspense
+        fallback={<RowSkeleton className="lg:grid-cols-2" heights={["h-80", "h-80", "h-72 lg:col-span-2"]} />}
+      >
         <FunnelAndTrendSection />
       </Suspense>
 
@@ -76,7 +81,9 @@ export default async function LeadsAnalyticsPage() {
         <PerformanceSection />
       </Suspense>
 
-      <Suspense fallback={<RowSkeleton className="lg:grid-cols-2" heights={["h-72", "h-72"]} />}>
+      <Suspense
+        fallback={<RowSkeleton className="lg:grid-cols-2" heights={["h-72", "h-72", "h-72 lg:col-span-2"]} />}
+      >
         <ClientSection />
       </Suspense>
     </div>
@@ -84,22 +91,30 @@ export default async function LeadsAnalyticsPage() {
 }
 
 async function OverviewSection() {
-  const [sales, forecast, newThisMonth] = await Promise.all([
+  const [sales, forecast, newThisMonth, trend] = await Promise.all([
     getSalesOverview(),
     getPipelineForecast(),
     getNewLeadsThisMonth(),
+    getSalesTrend(6),
   ]);
 
-  return <AdvancedOverviewCards sales={sales} forecast={forecast} newThisMonth={newThisMonth} />;
+  return <AdvancedOverviewCards sales={sales} forecast={forecast} newThisMonth={newThisMonth} trend={trend} />;
 }
 
 async function FunnelAndTrendSection() {
-  const [funnel, trend] = await Promise.all([getFunnelConversion(), getSalesTrend(6)]);
+  const [funnel, pipelineByStage, trend] = await Promise.all([
+    getFunnelConversion(),
+    getPipelineByStage(),
+    getSalesTrend(6),
+  ]);
 
   return (
     <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
       <FunnelConversionChart data={funnel} />
-      <SalesTrendChart trend={trend} />
+      <PipelineValueDonut data={pipelineByStage} />
+      <div className="lg:col-span-2">
+        <SalesTrendChart trend={trend} />
+      </div>
     </div>
   );
 }
@@ -151,8 +166,11 @@ async function ClientSection() {
         />
       </div>
       <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
+        <ClientStatusDonut stats={clientStats} />
         <ClientGrowthChart trend={clientGrowth} />
-        <TopClientsTable data={topClients} />
+        <div className="lg:col-span-2">
+          <TopClientsTable data={topClients} />
+        </div>
       </div>
     </div>
   );

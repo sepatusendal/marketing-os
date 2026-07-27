@@ -1,21 +1,38 @@
 import { Users, Target, TrendingUp, Trophy, Clock, Wallet, Gauge, UserPlus } from "lucide-react";
 import { KpiCard } from "@/components/modules/dashboard/kpi-card";
+import { Sparkline } from "@/components/ui/charts/sparkline";
+import { ACCENT_HEX } from "@/lib/accent-colors";
 import { formatIDRCompact } from "@/lib/format";
 import type { getSalesOverview } from "@/server/report.service";
-import type { getPipelineForecast } from "@/server/sales-analytics.service";
+import type { getPipelineForecast, getSalesTrend } from "@/server/sales-analytics.service";
 
 export function AdvancedOverviewCards({
   sales,
   forecast,
   newThisMonth,
+  trend,
 }: {
   sales: Awaited<ReturnType<typeof getSalesOverview>>;
   forecast: Awaited<ReturnType<typeof getPipelineForecast>>;
   newThisMonth: number;
+  trend: Awaited<ReturnType<typeof getSalesTrend>>;
 }) {
+  const hasTrend = trend.labels.length > 1;
+
   return (
     <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
-      <KpiCard label="Total Leads" value={sales.total} icon={Users} accent="indigo" secondary={`${sales.open} open`} />
+      <KpiCard
+        label="Total Leads"
+        value={sales.total}
+        icon={Users}
+        accent="indigo"
+        secondary={`${sales.open} open`}
+        sparkline={
+          hasTrend && trend.newLeads.some((v) => v > 0) ? (
+            <Sparkline values={trend.newLeads} colorVar={ACCENT_HEX.indigo} />
+          ) : undefined
+        }
+      />
       <KpiCard
         label="New This Month"
         value={newThisMonth}
@@ -29,6 +46,11 @@ export function AdvancedOverviewCards({
         icon={Target}
         accent="emerald"
         secondary={`${sales.won} won · ${sales.lost} lost`}
+        sparkline={
+          hasTrend && trend.won.some((v) => v > 0) ? (
+            <Sparkline values={trend.won} colorVar={ACCENT_HEX.emerald} />
+          ) : undefined
+        }
       />
       <KpiCard
         label="Avg Deal Size"
@@ -64,6 +86,11 @@ export function AdvancedOverviewCards({
         icon={Trophy}
         accent="indigo"
         secondary="realized"
+        sparkline={
+          hasTrend && trend.revenue.some((v) => v > 0) ? (
+            <Sparkline values={trend.revenue} colorVar={ACCENT_HEX.indigo} />
+          ) : undefined
+        }
       />
     </div>
   );
