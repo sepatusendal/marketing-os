@@ -57,6 +57,15 @@ export function ClientDrawer({
   const [comments, setComments] = useState<(Comment & { author: PrismaUser })[]>([]);
   const [timeline, setTimeline] = useState<(ActivityLog & { actor: PrismaUser })[]>([]);
 
+  // In-render adjustment (not an effect) so switching clients clears stale
+  // comments/timeline immediately without risking a setState-in-effect cascade.
+  const [syncedClientId, setSyncedClientId] = useState(client?.id);
+  if (client?.id !== syncedClientId) {
+    setSyncedClientId(client?.id);
+    setComments([]);
+    setTimeline([]);
+  }
+
   useEffect(() => {
     if (state.success) {
       toast.success("Client saved");
@@ -70,8 +79,16 @@ export function ClientDrawer({
 
   useEffect(() => {
     if (!client || !open) return;
-    listCommentsAction("CLIENT", client.id).then(setComments);
-    listClientTimelineAction(client.id).then(setTimeline);
+    let cancelled = false;
+    listCommentsAction("CLIENT", client.id).then((data) => {
+      if (!cancelled) setComments(data);
+    });
+    listClientTimelineAction(client.id).then((data) => {
+      if (!cancelled) setTimeline(data);
+    });
+    return () => {
+      cancelled = true;
+    };
   }, [client, open]);
 
   const fieldError = (field: string) => state.fieldErrors?.[field]?.[0];

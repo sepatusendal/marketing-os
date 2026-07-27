@@ -175,48 +175,60 @@ export async function updateLeadStatusAction(input: unknown): Promise<ActionStat
 
   // Automation: a lead that just became WON gets an onboarding task so the
   // handoff to delivery/account management doesn't rely on someone
-  // remembering to create it manually.
-  if (parsed.data.status === "WON" && existing.status !== "WON" && lead.ownerId) {
-    const dueDate = new Date(Date.now() + 3 * 24 * 60 * 60 * 1000);
-    const task = await createTask({
-      title: `Onboard new client: ${lead.name}`,
-      description: `Auto-created when the lead moved to WON. Kick off onboarding.`,
-      campaignId: lead.campaignId ?? "",
-      assigneeId: lead.ownerId,
-      dueDate: dueDate.toISOString(),
-      priority: "HIGH",
-    });
-    await logActivity({
-      actorId: user.id,
-      entityType: "TASK",
-      entityId: task.id,
-      action: "created",
-      meta: { automation: "lead_won_onboarding", leadId: lead.id },
-    });
-    await createNotification({
-      userId: lead.ownerId,
-      type: "task_assigned",
-      message: `Onboarding task created for "${lead.name}" (just won)`,
-      entityType: "TASK",
-      entityId: task.id,
-    });
-    revalidatePath("/tasks");
-  } else if (parsed.data.status === "WON" && existing.status !== "WON" && !lead.ownerId) {
-    // No owner to assign the onboarding task to — surface the gap instead
-    // of silently skipping the automation, so it doesn't just get lost.
-    await logActivity({
-      actorId: user.id,
-      entityType: "LEAD",
-      entityId: lead.id,
-      action: "onboarding_task_skipped_no_owner",
-    });
-    await createNotification({
-      userId: user.id,
-      type: "lead_won_needs_owner",
-      message: `"${lead.name}" was won but has no owner — no onboarding task was created. Assign an owner and create one manually.`,
-      entityType: "LEAD",
-      entityId: lead.id,
-    });
+  // remembering to create it manually. The core status change above already
+  // committed — wrapped so a failure here (e.g. a transient notification/
+  // email error) surfaces as a soft warning instead of failing the whole
+  // action and leaving the user unsure whether the status change stuck.
+  try {
+    if (parsed.data.status === "WON" && existing.status !== "WON" && lead.ownerId) {
+      const dueDate = new Date(Date.now() + 3 * 24 * 60 * 60 * 1000);
+      const task = await createTask({
+        title: `Onboard new client: ${lead.name}`,
+        description: `Auto-created when the lead moved to WON. Kick off onboarding.`,
+        campaignId: lead.campaignId ?? "",
+        assigneeId: lead.ownerId,
+        dueDate: dueDate.toISOString(),
+        priority: "HIGH",
+      });
+      await logActivity({
+        actorId: user.id,
+        entityType: "TASK",
+        entityId: task.id,
+        action: "created",
+        meta: { automation: "lead_won_onboarding", leadId: lead.id },
+      });
+      await createNotification({
+        userId: lead.ownerId,
+        type: "task_assigned",
+        message: `Onboarding task created for "${lead.name}" (just won)`,
+        entityType: "TASK",
+        entityId: task.id,
+      });
+      revalidatePath("/tasks");
+    } else if (parsed.data.status === "WON" && existing.status !== "WON" && !lead.ownerId) {
+      // No owner to assign the onboarding task to — surface the gap instead
+      // of silently skipping the automation, so it doesn't just get lost.
+      await logActivity({
+        actorId: user.id,
+        entityType: "LEAD",
+        entityId: lead.id,
+        action: "onboarding_task_skipped_no_owner",
+      });
+      await createNotification({
+        userId: user.id,
+        type: "lead_won_needs_owner",
+        message: `"${lead.name}" was won but has no owner — no onboarding task was created. Assign an owner and create one manually.`,
+        entityType: "LEAD",
+        entityId: lead.id,
+      });
+    }
+  } catch (err) {
+    console.error("lead_won_onboarding automation failed", err);
+    revalidatePath("/leads");
+    return {
+      success: true,
+      warning: "Lead marked as Won, but the onboarding automation failed — create the task manually.",
+    };
   }
 
   revalidatePath("/leads");

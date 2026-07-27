@@ -82,12 +82,16 @@ export function LeadDrawer({
   );
   const [savingFollowUp, setSavingFollowUp] = useState(false);
 
-  // Reset the follow-up input when the drawer switches to a different lead —
-  // an in-render state adjustment (not an effect) so it can't cascade.
+  // Reset per-lead state when the drawer switches to a different lead — an
+  // in-render adjustment (not an effect) so it can't cascade, and clears
+  // comments/timeline immediately so switching leads never briefly shows
+  // the previous lead's data.
   const [syncedLeadId, setSyncedLeadId] = useState(lead?.id);
   if (lead?.id !== syncedLeadId) {
     setSyncedLeadId(lead?.id);
     setNextFollowUp(lead?.nextFollowUpAt ? new Date(lead.nextFollowUpAt).toISOString().slice(0, 10) : "");
+    setComments([]);
+    setTimeline([]);
   }
 
   useEffect(() => {
@@ -103,8 +107,20 @@ export function LeadDrawer({
 
   useEffect(() => {
     if (!lead || !open) return;
-    listCommentsAction("LEAD", lead.id).then(setComments);
-    listLeadTimelineAction(lead.id).then(setTimeline);
+    // Guards against a slow request for a lead the user has already
+    // navigated away from overwriting fresher state (e.g. rapid-clicking
+    // between cards) — the immediate clear-on-switch lives in the
+    // in-render adjustment above.
+    let cancelled = false;
+    listCommentsAction("LEAD", lead.id).then((data) => {
+      if (!cancelled) setComments(data);
+    });
+    listLeadTimelineAction(lead.id).then((data) => {
+      if (!cancelled) setTimeline(data);
+    });
+    return () => {
+      cancelled = true;
+    };
   }, [lead, open]);
 
   const fieldError = (field: string) => state.fieldErrors?.[field]?.[0];
@@ -115,6 +131,7 @@ export function LeadDrawer({
     if (result.error) toast.error(result.error);
     else {
       toast.success("Status updated");
+      if (result.warning) toast.warning(result.warning);
       router.refresh();
     }
   }

@@ -37,13 +37,30 @@ export function LeadPipelineBoard({
   const [lostDialogOpen, setLostDialogOpen] = useState(false);
   const [pendingLostLeadId, setPendingLostLeadId] = useState<string | null>(null);
 
+  // Optimistic local copy — a drop moves the card instantly instead of
+  // waiting on the round trip + full page refresh, which is what made the
+  // board feel heavy. Reconciled with the server prop in-render (not an
+  // effect, so it can't cascade) whenever the prop reference changes — after
+  // router.refresh() lands, or a filter/search changes the set.
+  const [localLeads, setLocalLeads] = useState(leads);
+  const [syncedLeads, setSyncedLeads] = useState(leads);
+  if (leads !== syncedLeads) {
+    setSyncedLeads(leads);
+    setLocalLeads(leads);
+  }
+
   function commitStatusChange(leadId: string, status: LeadStatus, lostReason?: LeadLostReason) {
+    const previous = localLeads;
+    setLocalLeads((current) => current.map((l) => (l.id === leadId ? { ...l, status } : l)));
+
     startTransition(async () => {
       const result = await updateLeadStatusAction({ id: leadId, status, lostReason });
       if (result.error) {
         toast.error(result.error);
+        setLocalLeads(previous);
         return;
       }
+      if (result.warning) toast.warning(result.warning);
       router.refresh();
     });
   }
@@ -51,6 +68,8 @@ export function LeadPipelineBoard({
   function handleDrop(status: LeadStatus, leadId: string) {
     setDragOverColumn(null);
     if (!canEdit) return;
+    const lead = localLeads.find((l) => l.id === leadId);
+    if (!lead || lead.status === status) return;
     if (status === "LOST") {
       setPendingLostLeadId(leadId);
       setLostDialogOpen(true);
@@ -81,7 +100,7 @@ export function LeadPipelineBoard({
           minimum width so cards stay readable. */}
       <div className="flex gap-2 overflow-x-auto pb-2">
         {COLUMNS.map((col) => {
-          const columnLeads = leads.filter((l) => l.status === col.status);
+          const columnLeads = localLeads.filter((l) => l.status === col.status);
           return (
             <div
               key={col.status}
