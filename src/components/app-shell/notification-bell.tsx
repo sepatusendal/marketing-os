@@ -15,6 +15,7 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { formatDate } from "@/lib/format";
+import { notificationHref } from "@/lib/notification-href";
 import {
   markNotificationReadAction,
   markAllNotificationsReadAction,
@@ -24,11 +25,9 @@ import type { Notification } from "@prisma/client";
 export function NotificationBell({
   notifications,
   unreadCount,
-  hrefFor,
 }: {
   notifications: Notification[];
   unreadCount: number;
-  hrefFor: (n: Notification) => string;
 }) {
   const router = useRouter();
   const [open, setOpen] = useState(false);
@@ -38,7 +37,7 @@ export function NotificationBell({
       await markNotificationReadAction(n.id);
     }
     setOpen(false);
-    router.push(hrefFor(n));
+    router.push(notificationHref(n.entityType, n.entityId));
     router.refresh();
   }
 
