@@ -1,30 +1,28 @@
 "use client";
 
-import { useState } from "react";
+import { useState, type ReactNode } from "react";
 import { Menu, Search } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
 import { SidebarNav } from "./sidebar-nav";
 import { ThemeToggle } from "./theme-toggle";
 import { UserMenu } from "./user-menu";
-import { NotificationBell } from "./notification-bell";
-import { notificationHref } from "@/lib/notification-href";
-import type { Notification, Role } from "@prisma/client";
+import type { Role } from "@prisma/client";
 
 export function Topbar({
   name,
   email,
   avatarUrl,
   role,
-  notifications,
-  unreadCount,
+  notificationSlot,
 }: {
   name: string;
   email: string;
   avatarUrl?: string | null;
   role: Role;
-  notifications: Notification[];
-  unreadCount: number;
+  /** Streamed in separately (see NotificationBellSlot) so the shell paints
+   * immediately instead of blocking on the notifications query. */
+  notificationSlot: ReactNode;
 }) {
   const [open, setOpen] = useState(false);
 
@@ -72,11 +70,7 @@ export function Topbar({
       <div className="flex-1" />
 
       <div className="flex items-center gap-1">
-        <NotificationBell
-          notifications={notifications}
-          unreadCount={unreadCount}
-          hrefFor={(n) => notificationHref(n.entityType, n.entityId)}
-        />
+        {notificationSlot}
         <ThemeToggle />
       </div>
       <div className="mx-1 h-6 w-px bg-border" />

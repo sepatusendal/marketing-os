@@ -1,10 +1,13 @@
+import { Suspense } from "react";
 import { redirect } from "next/navigation";
+import { Bell } from "lucide-react";
 import { getCurrentUser } from "@/lib/auth";
-import { listNotifications, countUnreadNotifications } from "@/server/notification.service";
 import { AppSidebar } from "@/components/app-shell/app-sidebar";
 import { Topbar } from "@/components/app-shell/topbar";
 import { CommandPalette } from "@/components/app-shell/command-palette";
 import { FollowupChecker } from "@/components/app-shell/followup-checker";
+import { NotificationBellSlot } from "@/components/app-shell/notification-bell-slot";
+import { Button } from "@/components/ui/button";
 
 export default async function AppLayout({
   children,
@@ -16,11 +19,6 @@ export default async function AppLayout({
   if (!user) {
     redirect("/login");
   }
-
-  const [notifications, unreadCount] = await Promise.all([
-    listNotifications(user.id),
-    countUnreadNotifications(user.id),
-  ]);
 
   return (
     <div className="flex min-h-screen">
@@ -34,8 +32,19 @@ export default async function AppLayout({
           email={user.email}
           avatarUrl={user.avatarUrl}
           role={user.role}
-          notifications={notifications}
-          unreadCount={unreadCount}
+          notificationSlot={
+            // Its own Suspense boundary — the shell paints immediately
+            // instead of blocking every page load on the notifications query.
+            <Suspense
+              fallback={
+                <Button variant="ghost" size="icon" disabled aria-label="Notifications">
+                  <Bell className="h-4 w-4" />
+                </Button>
+              }
+            >
+              <NotificationBellSlot userId={user.id} />
+            </Suspense>
+          }
         />
         <main className="min-w-0 flex-1 overflow-x-hidden p-4 md:p-6">{children}</main>
       </div>
