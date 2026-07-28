@@ -22,6 +22,7 @@ export function AdvancedOverviewCards({
   return (
     <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
       <KpiCard
+        size="sm"
         label="Total Leads"
         value={sales.total}
         icon={Users}
@@ -34,6 +35,7 @@ export function AdvancedOverviewCards({
         }
       />
       <KpiCard
+        size="sm"
         label="New This Month"
         value={newThisMonth}
         icon={UserPlus}
@@ -41,6 +43,7 @@ export function AdvancedOverviewCards({
         secondary="leads created"
       />
       <KpiCard
+        size="sm"
         label="Win Rate"
         value={`${sales.winRate}%`}
         icon={Target}
@@ -53,6 +56,7 @@ export function AdvancedOverviewCards({
         }
       />
       <KpiCard
+        size="sm"
         label="Avg Deal Size"
         value={formatIDRCompact(sales.avgDealSize)}
         icon={Wallet}
@@ -60,6 +64,7 @@ export function AdvancedOverviewCards({
         secondary="per won lead"
       />
       <KpiCard
+        size="sm"
         label="Avg Sales Cycle"
         value={`${sales.avgCycleDays}d`}
         icon={Clock}
@@ -67,6 +72,7 @@ export function AdvancedOverviewCards({
         secondary="created → won"
       />
       <KpiCard
+        size="sm"
         label="Open Pipeline"
         value={formatIDRCompact(forecast.rawValue)}
         icon={TrendingUp}
@@ -74,6 +80,7 @@ export function AdvancedOverviewCards({
         secondary={`${forecast.openCount} deals`}
       />
       <KpiCard
+        size="sm"
         label="Weighted Forecast"
         value={formatIDRCompact(forecast.weightedValue)}
         icon={Gauge}
@@ -81,6 +88,7 @@ export function AdvancedOverviewCards({
         secondary="probability-adjusted"
       />
       <KpiCard
+        size="sm"
         label="Won Revenue"
         value={formatIDRCompact(sales.wonRevenue)}
         icon={Trophy}

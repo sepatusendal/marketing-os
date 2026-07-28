@@ -8,7 +8,7 @@ export function ClientStatusDonut({ stats }: { stats: Awaited<ReturnType<typeof 
   const total = stats.active + stats.inactive + stats.churned;
 
   return (
-    <WidgetCard title="Client Status Mix" accent="emerald" icon={Users2}>
+    <WidgetCard size="sm" title="Client Status Mix" accent="emerald" icon={Users2}>
       {total === 0 ? (
         <p className="text-sm text-muted-foreground">No clients yet.</p>
       ) : (

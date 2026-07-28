@@ -10,27 +10,38 @@ export function WidgetCard({
   children,
   accent,
   icon: Icon,
+  size = "default",
 }: {
   title: string;
   action?: ReactNode;
   children: ReactNode;
   accent?: AccentColor;
   icon?: LucideIcon;
+  /** "sm" for dense grids (analytics/reports) — tighter padding, smaller title/icon. */
+  size?: "default" | "sm";
 }) {
+  const sm = size === "sm";
+
   return (
-    <Card className={cn(accent && ACCENT_WASH[accent])}>
+    <Card size={size} className={cn(accent && ACCENT_WASH[accent])}>
       <CardHeader className="flex-row items-center justify-between space-y-0">
         <div className="flex items-center gap-2">
           {Icon && accent && (
-            <span className={cn("flex h-6 w-6 shrink-0 items-center justify-center rounded-md", ACCENT_CHIP[accent])}>
-              <Icon className="h-3.5 w-3.5" />
+            <span
+              className={cn(
+                "flex shrink-0 items-center justify-center rounded-md",
+                sm ? "h-5 w-5" : "h-6 w-6",
+                ACCENT_CHIP[accent],
+              )}
+            >
+              <Icon className={sm ? "h-3 w-3" : "h-3.5 w-3.5"} />
             </span>
           )}
-          <CardTitle className="text-base">{title}</CardTitle>
+          <CardTitle className={sm ? "text-sm" : "text-base"}>{title}</CardTitle>
         </div>
         {action}
       </CardHeader>
-      <CardContent>{children}</CardContent>
+      <CardContent className={sm ? "text-sm" : undefined}>{children}</CardContent>
     </Card>
   );
 }

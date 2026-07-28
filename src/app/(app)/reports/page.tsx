@@ -91,15 +91,17 @@ export default async function ReportsPage({
           <div>
             <p className="mb-2 text-sm font-medium text-muted-foreground">Clients</p>
             <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
-              <KpiCard label="Total Clients" value={clientStats.total} icon={Users} accent="indigo" />
-              <KpiCard label="Active" value={clientStats.active} icon={UserCheck} accent="emerald" />
+              <KpiCard size="sm" label="Total Clients" value={clientStats.total} icon={Users} accent="indigo" />
+              <KpiCard size="sm" label="Active" value={clientStats.active} icon={UserCheck} accent="emerald" />
               <KpiCard
+                size="sm"
                 label="Inactive / Churned"
                 value={clientStats.inactive + clientStats.churned}
                 icon={UserX}
                 accent="amber"
               />
               <KpiCard
+                size="sm"
                 label="Active Contract Value"
                 value={formatIDRCompact(clientStats.activeContractValue)}
                 icon={Wallet}

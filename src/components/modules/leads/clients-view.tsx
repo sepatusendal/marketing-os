@@ -66,10 +66,17 @@ export function ClientsView({
   return (
     <div className="space-y-4">
       <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
-        <KpiCard label="Total clients" value={stats.total} icon={Users} accent="indigo" />
-        <KpiCard label="Active" value={stats.active} icon={UserCheck} accent="emerald" />
-        <KpiCard label="Inactive / churned" value={stats.inactive + stats.churned} icon={UserX} accent="amber" />
+        <KpiCard size="sm" label="Total clients" value={stats.total} icon={Users} accent="indigo" />
+        <KpiCard size="sm" label="Active" value={stats.active} icon={UserCheck} accent="emerald" />
         <KpiCard
+          size="sm"
+          label="Inactive / churned"
+          value={stats.inactive + stats.churned}
+          icon={UserX}
+          accent="amber"
+        />
+        <KpiCard
+          size="sm"
           label="Active contract value"
           value={formatIDRCompact(stats.activeContractValue)}
           icon={Wallet}

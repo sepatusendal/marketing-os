@@ -14,14 +14,14 @@ export function LostReasonChart({
 }) {
   if (data.length === 0) {
     return (
-      <WidgetCard title="Why Leads Are Lost" accent="red" icon={XCircle}>
+      <WidgetCard size="sm" title="Why Leads Are Lost" accent="red" icon={XCircle}>
         <p className="text-sm text-muted-foreground">No lost leads in this range. 🎉</p>
       </WidgetCard>
     );
   }
 
   return (
-    <WidgetCard title="Why Leads Are Lost" accent="red" icon={XCircle}>
+    <WidgetCard size="sm" title="Why Leads Are Lost" accent="red" icon={XCircle}>
       <HorizontalBarChart
         data={data.map((d) => ({
           key: d.reason,

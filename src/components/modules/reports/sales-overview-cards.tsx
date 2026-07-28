@@ -7,6 +7,7 @@ export function SalesOverviewCards({ sales }: { sales: Awaited<ReturnType<typeof
   return (
     <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 xl:grid-cols-6">
       <KpiCard
+        size="sm"
         label="Total Leads"
         value={sales.total}
         icon={Users}
@@ -14,6 +15,7 @@ export function SalesOverviewCards({ sales }: { sales: Awaited<ReturnType<typeof
         secondary={`${sales.open} open`}
       />
       <KpiCard
+        size="sm"
         label="Win Rate"
         value={`${sales.winRate}%`}
         icon={Target}
@@ -21,6 +23,7 @@ export function SalesOverviewCards({ sales }: { sales: Awaited<ReturnType<typeof
         secondary={`${sales.won} won · ${sales.lost} lost`}
       />
       <KpiCard
+        size="sm"
         label="Avg Deal Size"
         value={formatIDRCompact(sales.avgDealSize)}
         icon={Wallet}
@@ -28,6 +31,7 @@ export function SalesOverviewCards({ sales }: { sales: Awaited<ReturnType<typeof
         secondary="per won lead"
       />
       <KpiCard
+        size="sm"
         label="Avg Sales Cycle"
         value={`${sales.avgCycleDays}d`}
         icon={Clock}
@@ -35,6 +39,7 @@ export function SalesOverviewCards({ sales }: { sales: Awaited<ReturnType<typeof
         secondary="created → won"
       />
       <KpiCard
+        size="sm"
         label="Open Pipeline"
         value={formatIDRCompact(sales.openPipelineValue)}
         icon={TrendingUp}
@@ -42,6 +47,7 @@ export function SalesOverviewCards({ sales }: { sales: Awaited<ReturnType<typeof
         secondary="potential revenue"
       />
       <KpiCard
+        size="sm"
         label="Won Revenue"
         value={formatIDRCompact(sales.wonRevenue)}
         icon={Trophy}

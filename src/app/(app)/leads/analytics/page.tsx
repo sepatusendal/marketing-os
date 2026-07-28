@@ -67,22 +67,22 @@ export default async function LeadsAnalyticsPage() {
         </div>
       </div>
 
-      <Suspense fallback={<RowSkeleton className="sm:grid-cols-4" heights={Array(8).fill("h-32")} />}>
+      <Suspense fallback={<RowSkeleton className="sm:grid-cols-4" heights={Array(8).fill("h-24")} />}>
         <OverviewSection />
       </Suspense>
 
       <Suspense
-        fallback={<RowSkeleton className="lg:grid-cols-2" heights={["h-80", "h-80", "h-72 lg:col-span-2"]} />}
+        fallback={<RowSkeleton className="lg:grid-cols-2" heights={["h-72", "h-72", "h-64 lg:col-span-2"]} />}
       >
         <FunnelAndTrendSection />
       </Suspense>
 
-      <Suspense fallback={<RowSkeleton className="lg:grid-cols-3" heights={["h-80", "h-64", "h-64"]} />}>
+      <Suspense fallback={<RowSkeleton className="lg:grid-cols-3" heights={["h-72", "h-56", "h-56"]} />}>
         <PerformanceSection />
       </Suspense>
 
       <Suspense
-        fallback={<RowSkeleton className="lg:grid-cols-2" heights={["h-72", "h-72", "h-72 lg:col-span-2"]} />}
+        fallback={<RowSkeleton className="lg:grid-cols-2" heights={["h-64", "h-64", "h-64 lg:col-span-2"]} />}
       >
         <ClientSection />
       </Suspense>
@@ -150,15 +150,17 @@ async function ClientSection() {
     <div className="space-y-4">
       <h2 className="text-sm font-medium text-muted-foreground">Clients</h2>
       <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
-        <KpiCard label="Total Clients" value={clientStats.total} icon={Users} accent="indigo" />
-        <KpiCard label="Active" value={clientStats.active} icon={UserCheck} accent="emerald" />
+        <KpiCard size="sm" label="Total Clients" value={clientStats.total} icon={Users} accent="indigo" />
+        <KpiCard size="sm" label="Active" value={clientStats.active} icon={UserCheck} accent="emerald" />
         <KpiCard
+          size="sm"
           label="Inactive / Churned"
           value={clientStats.inactive + clientStats.churned}
           icon={UserX}
           accent="amber"
         />
         <KpiCard
+          size="sm"
           label="Active Contract Value"
           value={formatIDRCompact(clientStats.activeContractValue)}
           icon={Wallet}

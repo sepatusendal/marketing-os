@@ -13,7 +13,7 @@ const RANK_COLOR = ["bg-amber-500", "bg-slate-400", "bg-orange-600", "bg-primary
 export function OwnerLeaderboard({ data }: { data: Awaited<ReturnType<typeof getOwnerPerformance>> }) {
   if (data.length === 0) {
     return (
-      <WidgetCard title="Sales Leaderboard" accent="amber" icon={Trophy}>
+      <WidgetCard size="sm" title="Sales Leaderboard" accent="amber" icon={Trophy}>
         <p className="text-sm text-muted-foreground">No leads assigned to owners yet.</p>
       </WidgetCard>
     );
@@ -22,7 +22,7 @@ export function OwnerLeaderboard({ data }: { data: Awaited<ReturnType<typeof get
   const top8 = data.slice(0, 8);
 
   return (
-    <WidgetCard title="Sales Leaderboard" accent="amber" icon={Trophy}>
+    <WidgetCard size="sm" title="Sales Leaderboard" accent="amber" icon={Trophy}>
       <div className="space-y-5">
         <HorizontalBarChart
           data={top8.map((owner, i) => ({

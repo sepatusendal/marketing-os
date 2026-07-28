@@ -14,7 +14,7 @@ export function SalesTrendChart({ trend }: { trend: Awaited<ReturnType<typeof ge
   const hasData = trend.newLeads.some((v) => v > 0) || trend.won.some((v) => v > 0);
 
   return (
-    <WidgetCard title="Sales Trend (6 months)" accent="indigo" icon={TrendingUp}>
+    <WidgetCard size="sm" title="Sales Trend (6 months)" accent="indigo" icon={TrendingUp}>
       {!hasData ? (
         <p className="text-sm text-muted-foreground">Not enough history yet.</p>
       ) : (

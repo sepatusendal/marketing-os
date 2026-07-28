@@ -14,14 +14,14 @@ export function SourcePerformanceChart({
 }) {
   if (data.length === 0) {
     return (
-      <WidgetCard title="Win Rate by Source" accent={WIDGET_ACCENT.leadSummary} icon={Radar}>
+      <WidgetCard size="sm" title="Win Rate by Source" accent={WIDGET_ACCENT.leadSummary} icon={Radar}>
         <p className="text-sm text-muted-foreground">No leads in this range.</p>
       </WidgetCard>
     );
   }
 
   return (
-    <WidgetCard title="Win Rate by Source" accent={WIDGET_ACCENT.leadSummary} icon={Radar}>
+    <WidgetCard size="sm" title="Win Rate by Source" accent={WIDGET_ACCENT.leadSummary} icon={Radar}>
       <HorizontalBarChart
         data={data.slice(0, 8).map((d) => ({
           key: d.source,

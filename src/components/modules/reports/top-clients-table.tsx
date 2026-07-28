@@ -9,14 +9,14 @@ import type { getTopClients } from "@/server/sales-analytics.service";
 export function TopClientsTable({ data }: { data: Awaited<ReturnType<typeof getTopClients>> }) {
   if (data.length === 0) {
     return (
-      <WidgetCard title="Top Clients by Value" accent="violet" icon={Crown}>
+      <WidgetCard size="sm" title="Top Clients by Value" accent="violet" icon={Crown}>
         <p className="text-sm text-muted-foreground">No clients with a contract value yet.</p>
       </WidgetCard>
     );
   }
 
   return (
-    <WidgetCard title="Top Clients by Value" accent="violet" icon={Crown}>
+    <WidgetCard size="sm" title="Top Clients by Value" accent="violet" icon={Crown}>
       <Table>
         <TableHeader>
           <TableRow>

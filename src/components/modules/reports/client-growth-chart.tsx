@@ -8,7 +8,7 @@ export function ClientGrowthChart({ trend }: { trend: Awaited<ReturnType<typeof 
   const hasData = trend.newClients.some((v) => v > 0);
 
   return (
-    <WidgetCard title="Client Growth (6 months)" accent="emerald" icon={LineChart}>
+    <WidgetCard size="sm" title="Client Growth (6 months)" accent="emerald" icon={LineChart}>
       {!hasData ? (
         <p className="text-sm text-muted-foreground">No new clients in this period yet.</p>
       ) : (

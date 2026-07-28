@@ -11,7 +11,7 @@ export function PipelineValueDonut({ data }: { data: Awaited<ReturnType<typeof g
   const total = data.reduce((sum, d) => sum + Number(d.value), 0);
 
   return (
-    <WidgetCard title="Open Pipeline by Stage (Value)" accent="amber" icon={PieChart}>
+    <WidgetCard size="sm" title="Open Pipeline by Stage (Value)" accent="amber" icon={PieChart}>
       {total === 0 ? (
         <p className="text-sm text-muted-foreground">No open leads with a revenue estimate yet.</p>
       ) : (
