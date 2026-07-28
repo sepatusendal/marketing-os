@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
 import { ArrowDown, ArrowUp, Trash2 } from "lucide-react";
@@ -35,10 +35,13 @@ export function BoardColumnManager({ columns }: { columns: BoardColumn[] }) {
 
   // Reconciles with the server once router.refresh() lands (create/delete/
   // rename all go through this same prop), without clobbering the optimistic
-  // reorder already applied in handleMove.
-  useEffect(() => {
+  // reorder already applied in handleMove. An in-render adjustment (not an
+  // effect) so it can't cascade.
+  const [syncedColumns, setSyncedColumns] = useState(columns);
+  if (columns !== syncedColumns) {
+    setSyncedColumns(columns);
     setLocalColumns(columns);
-  }, [columns]);
+  }
 
   async function handleCreate(e: React.FormEvent) {
     e.preventDefault();
