@@ -52,7 +52,7 @@ export function OwnerLeaderboard({ data }: { data: Awaited<ReturnType<typeof get
                   <div className="flex items-center gap-2">
                     <span className="w-4 shrink-0 text-center text-xs">{MEDAL[i] ?? i + 1}</span>
                     <Avatar size="sm">
-                      <AvatarImage src={owner.avatarUrl ?? undefined} alt={owner.name} />
+                      {owner.avatarUrl && <AvatarImage src={owner.avatarUrl} alt={owner.name} />}
                       <AvatarFallback>{initials(owner.name)}</AvatarFallback>
                     </Avatar>
                     <span className="truncate font-medium">{owner.name}</span>
