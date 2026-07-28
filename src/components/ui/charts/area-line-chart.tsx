@@ -2,6 +2,7 @@
 
 import { useState, useRef } from "react";
 import { cn } from "@/lib/utils";
+import { formatIDRCompact } from "@/lib/format";
 
 export type ChartSeries = {
   key: string;
@@ -41,14 +42,16 @@ export function AreaLineChart({
   labels,
   series,
   height = 220,
-  valueFormatter = (v: number) => String(v),
+  valueFormat = "number",
 }: {
   labels: string[];
   series: ChartSeries[];
   height?: number;
-  /** Formats the tooltip's per-series value — e.g. Rupiah for a revenue series. Defaults to the raw number. */
-  valueFormatter?: (value: number) => string;
+  /** Server Components can't pass function props to a Client Component —
+   * a fixed format key avoids that boundary issue (same as DonutChart). */
+  valueFormat?: "number" | "idr";
 }) {
+  const valueFormatter = valueFormat === "idr" ? formatIDRCompact : (v: number) => String(v);
   const [hoverIndex, setHoverIndex] = useState<number | null>(null);
   const svgRef = useRef<SVGSVGElement>(null);
 

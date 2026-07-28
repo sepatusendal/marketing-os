@@ -2,7 +2,6 @@ import { TrendingUp } from "lucide-react";
 import { WidgetCard } from "@/components/modules/dashboard/widget-card";
 import { AreaLineChart } from "@/components/ui/charts/area-line-chart";
 import { ACCENT_HEX } from "@/lib/accent-colors";
-import { formatIDRCompact } from "@/lib/format";
 import type { getSalesTrend } from "@/server/sales-analytics.service";
 
 /**
@@ -31,7 +30,7 @@ export function SalesTrendChart({ trend }: { trend: Awaited<ReturnType<typeof ge
           <AreaLineChart
             labels={trend.labels}
             height={140}
-            valueFormatter={formatIDRCompact}
+            valueFormat="idr"
             series={[{ key: "revenue", label: "Won Revenue", colorHex: ACCENT_HEX.violet, values: trend.revenue }]}
           />
         </div>
